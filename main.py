@@ -36,10 +36,10 @@ class Aplicacion(CTk.CTk):
         ing_completo = {"Vienesa":1, "Pan de completo":1, "Tomate":1, "Palta":1}
         ing_hamburguesa = {"Pan de hamburguesa":1, "Lamina de queso":1, "Churrasco de carne":1}        
 
-        papas = Menus("Papas Fritas", 500, ing_papas, "Proyecto 1/Imagenes/icono_papas_fritas_64x64.png")
-        pepsi = Menus("Pepsi", 1100, ing_pepsi, "Proyecto 1/Imagenes/icono_cola_64x64.png")
-        completo = Menus("Completos", 1800, ing_completo, "Proyecto 1/Imagenes/icono_hotdog_sin_texto_64x64.png")
-        hamburguesa = Menus("Hamburguesa", 3500, ing_hamburguesa, "Proyecto 1/Imagenes/icono_hamburguesa_negra_64x64.png")
+        papas = Menus("Papas Fritas", 500, ing_papas, "Imagenes/icono_papas_fritas_64x64.png")
+        pepsi = Menus("Pepsi", 1100, ing_pepsi, "Imagenes/icono_cola_64x64.png")
+        completo = Menus("Completos", 1800, ing_completo, "Imagenes/icono_hotdog_sin_texto_64x64.png")
+        hamburguesa = Menus("Hamburguesa", 3500, ing_hamburguesa, "Imagenes/icono_hamburguesa_negra_64x64.png")
 
         self.listamenus.append(papas)
         self.listamenus.append(pepsi)
