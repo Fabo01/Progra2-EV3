@@ -5,10 +5,8 @@ from tkinter import messagebox
 import customtkinter as ctk
 from crud.ingrediente_crud import IngredienteCRUD
 from crud.cliente_crud import ClienteCRUD
-# Crear la conexión a la base de datos
-engine = create_engine('sqlite:///restaurant.db')
-Session = sessionmaker(bind=engine)
-db_session = Session()
+from database import get_db, engine, Base
+
 
 class MainApp(ctk.CTk):
     def __init__(self):
@@ -36,7 +34,7 @@ class MainApp(ctk.CTk):
         # Limpiar el panel principal y cargar un nuevo panel
         for widget in self.main_frame.winfo_children():
             widget.destroy()
-        panel_class(self.main_frame, db_session).pack(fill="both", expand=True)
+        panel_class(self.main_frame, get_db).pack(fill="both", expand=True)
 
 class ClientePanel(ctk.CTkFrame):
     def __init__(self, parent, db):
