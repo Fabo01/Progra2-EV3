@@ -56,9 +56,47 @@ class Aplicacion(CTk.CTk):
     def crearpestañas(self):
         self.tabing = self.tabview.add("Ingreso de Ingredientes")
         self.tabped = self.tabview.add("Pedido")
+        self.tabgraficos = self.tabview.add("Gráficos Estadísticos")
 
         self.configpestañaing()
         self.configpestañaped()
+        self.configpestañagraficos()
+    def configpestañagraficos(self):
+        """Configura la pestaña para mostrar los gráficos estadísticos."""
+        self.graficos_frame = CTk.CTkFrame(self.tabgraficos)
+        self.graficos_frame.pack(pady=20, padx=20)
+
+        lbl_grafico = CTk.CTkLabel(self.graficos_frame, text="Seleccione el tipo de gráfico:")
+        lbl_grafico.pack(pady=10)
+
+        # Menú desplegable para seleccionar el gráfico
+        self.tipo_grafico = CTk.CTkComboBox(
+            self.graficos_frame,
+            values=["Ventas por Fecha", "Menús más Comprados", "Uso de Ingredientes"]
+        )
+        self.tipo_grafico.pack(pady=10)
+
+        # Botón para generar el gráfico
+        self.bttn_generar_grafico = CTk.CTkButton(
+            self.graficos_frame,
+            text="Generar Gráfico",
+            command=self.generar_grafico
+        )
+        self.bttn_generar_grafico.pack(pady=20)
+
+    def generar_grafico(self):
+        """Genera el gráfico basado en la selección del menú desplegable."""
+        from ProyectoNuevo.graficos import graficar_ventas_por_fecha, graficar_menus_mas_comprados, graficar_uso_ingredientes
+
+        tipo = self.tipo_grafico.get()
+        if tipo == "Ventas por Fecha":
+            graficar_ventas_por_fecha()
+        elif tipo == "Menús más Comprados":
+            graficar_menus_mas_comprados()
+        elif tipo == "Uso de Ingredientes":
+            graficar_uso_ingredientes()
+        else:
+            CTkM(title="Error", message="Seleccione un tipo de gráfico válido.", icon="cancel")
 
     def configpestañaing(self):
         self.ing_frame = CTk.CTkFrame(self.tabing)
