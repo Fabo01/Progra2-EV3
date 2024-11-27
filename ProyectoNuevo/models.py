@@ -37,5 +37,5 @@ class Pedido(Base):
     descripcion = Column(String)
     total = Column(Float, nullable=False)
     fecha = Column(DateTime, nullable=False)
-    cliente_id = Column(Integer, ForeignKey("clientes.id"))
+    cliente_email = Column(String, ForeignKey('clientes.email', onupdate="CASCADE"), nullable=False)
     cliente = relationship("Cliente", back_populates="pedidos")
