@@ -9,6 +9,13 @@ import tkinter
 from tkinter import ttk
 from CTkMessagebox import CTkMessagebox as CTkM
 from fpdf import FPDF
+from ProyectoNuevo.database import engine
+from models import Base 
+from ProyectoNuevo.crud import cliente_crud
+from ProyectoNuevo.database import SessionLocal
+
+
+Base.metadata.create_all(bind=engine)
 
 class Aplicacion(CTk.CTk):
     def __init__(self):
