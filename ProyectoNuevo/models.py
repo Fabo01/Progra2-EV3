@@ -15,6 +15,7 @@ class Ingrediente(Base):
     tipo = Column(String, nullable=False)
     cantidad = Column(Float, nullable=False)
     unidad = Column(String, nullable=False)
+    menu_ingredientes = relationship("MenuIngrediente", back_populates="ingrediente")
 
 class Menu(Base):
     __tablename__ = "menus"
@@ -30,6 +31,7 @@ class MenuIngrediente(Base):
     ingrediente_id = Column(Integer, ForeignKey("ingredientes.id"))
     cantidad = Column(Float, nullable=False)
     menu = relationship("Menu", back_populates="ingredientes")
+    ingrediente = relationship("Ingrediente", back_populates="menu_ingredientes")
 
 class Pedido(Base):
     __tablename__ = "pedidos"

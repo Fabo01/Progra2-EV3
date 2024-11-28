@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models import Cliente
+from ProyectoNuevo.models import Cliente
 import logging
 
 
