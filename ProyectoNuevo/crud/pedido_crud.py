@@ -1,52 +1,67 @@
-from sqlalchemy.orm import Session
-from models import Pedido, Cliente
 import logging
-
-
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
+from models import Pedido, Cliente
 class PedidoCRUD:
 
     @staticmethod
-    def crear_pedido(db: Session, cliente_email: str, descripcion: str):
-        # Verificar cliente
-        cliente = db.query(Cliente).filter_by(email=cliente_email).first()
-        if not cliente:
-            logging.error(f"No se encontró el cliente con el email '{cliente_email}'.")
-            return None
+    def crear_pedido(db: Session, cliente_id: int, descripcion: str):
+        try:
+            cliente = db.query(Cliente).filter_by(id=cliente_id).first()
+            if not cliente:
+                logging.error(f"No se encontró el cliente con el ID '{cliente_id}'.")
+                return None
 
-        # Crear pedido
-        pedido = Pedido(descripcion=descripcion, cliente=cliente)
-        db.add(pedido)
-        db.commit()
-        db.refresh(pedido)
-        return pedido
+            pedido = Pedido(descripcion=descripcion, cliente=cliente)
+            db.add(pedido)
+            db.commit()
+            db.refresh(pedido)
+            return pedido
+
+        except SQLAlchemyError as e:
+            db.rollback()
+            logging.error(f"Error al crear pedido: {e}")
+            return None
 
     @staticmethod
     def leer_pedidos(db: Session):
-        # Retornar todos los pedidos
-        return db.query(Pedido).all()
+        try:
+            return db.query(Pedido).all()
+        except SQLAlchemyError as e:
+            logging.error(f"Error al leer pedidos: {e}")
+            return []
 
     @staticmethod
     def actualizar_pedido(db: Session, pedido_id: int, nueva_descripcion: str):
-        # Buscar pedido
-        pedido = db.query(Pedido).get(pedido_id)
-        if not pedido:
-            logging.error(f"No se encontró el pedido con el ID '{pedido_id}'.")
-            return None
+        try:
+            pedido = db.query(Pedido).get(pedido_id)
+            if not pedido:
+                logging.error(f"No se encontró el pedido con el ID '{pedido_id}'.")
+                return None
 
-        # Actualizar descripción
-        pedido.descripcion = nueva_descripcion
-        db.commit()
-        db.refresh(pedido)
-        return pedido
+            pedido.descripcion = nueva_descripcion
+            db.commit()
+            db.refresh(pedido)
+            return pedido
+
+        except SQLAlchemyError as e:
+            db.rollback()
+            logging.error(f"Error al actualizar pedido: {e}")
+            return None
 
     @staticmethod
     def borrar_pedido(db: Session, pedido_id: int):
-        # Buscar pedido
-        pedido = db.query(Pedido).get(pedido_id)
-        if pedido:
-            db.delete(pedido)
-            db.commit()
-            return pedido
-        
-        logging.error(f"No se encontró el pedido con el ID '{pedido_id}'.")
-        return None
+        try:
+            pedido = db.query(Pedido).get(pedido_id)
+            if pedido:
+                db.delete(pedido)
+                db.commit()
+                return pedido
+
+            logging.error(f"No se encontró el pedido con el ID '{pedido_id}'.")
+            return None
+
+        except SQLAlchemyError as e:
+            db.rollback()
+            logging.error(f"Error al borrar pedido: {e}")
+            return None
