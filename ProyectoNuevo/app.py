@@ -9,88 +9,99 @@ from crud.menu_crud import MenuCRUD
 from crud.pedido_crud import PedidoCRUD
 from database import get_db, engine, Base
 
+# Configuración global de estilos
+ctk.set_appearance_mode("dark")  # Opciones: "dark", "light", "system"
+ctk.set_default_color_theme("blue")  # Opciones: "blue", "green", "dark-blue"
+
 Base.metadata.create_all(bind=engine)
 
 class MainApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("Gestión de Restaurante")
-        self.geometry("800x600")
-        self.configure(fg_color="white")
+        self.geometry("1000x700")
+        self.configure(fg_color="#1c1c1c")  # Fondo oscuro
 
-        # Botones de navegación
-        self.menu_frame = ctk.CTkFrame(self)
+        # Menú lateral
+        self.menu_frame = ctk.CTkFrame(self, fg_color="#2c2c2c", corner_radius=10)
         self.menu_frame.pack(side="left", fill="y", padx=10, pady=10)
 
-        self.main_frame = ctk.CTkFrame(self)
+        # Contenedor principal
+        self.main_frame = ctk.CTkFrame(self, fg_color="#1c1c1c", corner_radius=10)
         self.main_frame.pack(side="right", fill="both", expand=True, padx=10, pady=10)
 
-        # Opciones principales
+        # Título del menú
+        self.app_title = ctk.CTkLabel(self.menu_frame, text="Restaurante App", font=("Arial", 24, "bold"))
+        self.app_title.pack(pady=20)
+
+        # Botones de navegación
         self.create_menu_button("Clientes", ClientePanel)
         self.create_menu_button("Ingredientes", IngredientePanel)
 
     def create_menu_button(self, text, panel_class):
-        button = ctk.CTkButton(self.menu_frame, text=text, command=lambda: self.load_panel(panel_class))
-        button.pack(pady=10)
+        button = ctk.CTkButton(
+            self.menu_frame,
+            text=text,
+            command=lambda: self.load_panel(panel_class),
+            font=("Arial", 16, "bold"),
+            corner_radius=10,
+            height=40,
+            fg_color="#3c99dc",
+            hover_color="#4da9eb",
+        )
+        button.pack(pady=15, padx=10)
 
     def load_panel(self, panel_class):
-        # Limpiar el panel principal y cargar un nuevo panel
         for widget in self.main_frame.winfo_children():
             widget.destroy()
-        db_session = next(get_db())  # Obtener instancia de sesión activa
+        db_session = next(get_db())
         panel_class(self.main_frame, db_session).pack(fill="both", expand=True)
 
 class ClientePanel(ctk.CTkFrame):
     def __init__(self, parent, db):
         super().__init__(parent)
         self.db = db
-        self.configure(fg_color="lightgray")
+        self.configure(fg_color="#1c1c1c")
 
-        # Título del panel
-        self.label_title = ctk.CTkLabel(self, text="Gestión de Clientes", font=("Arial", 20))
+        self.label_title = ctk.CTkLabel(self, text="Gestión de Clientes", font=("Arial", 22, "bold"))
         self.label_title.pack(pady=10)
 
-        # Formulario para registrar o editar un cliente
+        # Formulario
         self.nombre_entry = self.create_form_entry("Nombre del Cliente")
         self.email_entry = self.create_form_entry("Email del Cliente")
 
-        # Botones de acciones
-        self.add_button = ctk.CTkButton(self, text="Registrar Cliente", command=self.add_cliente)
-        self.add_button.pack(pady=5)
+        # Botones de acción
+        self.add_button = ctk.CTkButton(self, text="Registrar Cliente", command=self.add_cliente, corner_radius=10)
+        self.add_button.pack(pady=10)
 
-        self.update_button = ctk.CTkButton(self, text="Editar Cliente", command=self.update_cliente)
-        self.update_button.pack(pady=5)
+        self.update_button = ctk.CTkButton(self, text="Editar Cliente", command=self.update_cliente, corner_radius=10)
+        self.update_button.pack(pady=10)
 
-        self.delete_button = ctk.CTkButton(self, text="Eliminar Cliente", command=self.delete_cliente)
-        self.delete_button.pack(pady=5)
+        self.delete_button = ctk.CTkButton(self, text="Eliminar Cliente", command=self.delete_cliente, corner_radius=10)
+        self.delete_button.pack(pady=10)
 
-        # Lista de clientes registrados
-        self.cliente_list = ctk.CTkTextbox(self, height=300)
+        # Lista de clientes
+        self.cliente_list = ctk.CTkTextbox(self, height=450, width=300, corner_radius=10)  
         self.cliente_list.pack(pady=10)
-        self.cliente_list.bind("<<Modified>>", lambda e: self.on_list_modified())
+        self.cliente_list.configure(state="disabled")
 
-        # Cargar la lista de clientes al inicio
+        # Actualizar lista al inicio
         self.refresh_list()
+        
 
     def create_form_entry(self, label_text):
-        """
-        Crea un campo de entrada con su etiqueta correspondiente.
-        """
-        frame = ctk.CTkFrame(self)
-        frame.pack(pady=5, padx=10, fill="x")
-        
-        label = ctk.CTkLabel(frame, text=label_text, width=20)
-        label.pack(side="left", padx=5)
-        
-        entry = ctk.CTkEntry(frame)
-        entry.pack(side="right", fill="x", expand=True)
-        
+        frame = ctk.CTkFrame(self, fg_color="#2c2c2c", corner_radius=10)
+        frame.pack(pady=10, padx=10, fill="x")
+
+        label = ctk.CTkLabel(frame, text=label_text, font=("Arial", 14))
+        label.pack(side="left", padx=10)
+
+        entry = ctk.CTkEntry(frame, corner_radius=10)
+        entry.pack(side="right", fill="x", expand=True, padx=10)
+
         return entry
 
     def add_cliente(self):
-        """
-        Lógica para añadir un nuevo cliente.
-        """
         nombre = self.nombre_entry.get()
         email = self.email_entry.get()
 
@@ -106,9 +117,6 @@ class ClientePanel(ctk.CTkFrame):
             messagebox.showerror("Error", f"El cliente con el email '{email}' ya existe.")
 
     def update_cliente(self):
-        """
-        Lógica para editar un cliente seleccionado.
-        """
         email_actual = self.get_selected_email()
         if not email_actual:
             messagebox.showerror("Error", "Debes seleccionar un cliente de la lista.")
@@ -129,9 +137,6 @@ class ClientePanel(ctk.CTkFrame):
             messagebox.showerror("Error", f"No se pudo actualizar el cliente '{email_actual}'.")
 
     def delete_cliente(self):
-        """
-        Lógica para eliminar un cliente seleccionado.
-        """
         cliente_email = self.get_selected_email()
         if not cliente_email:
             messagebox.showerror("Error", "Debes seleccionar un cliente de la lista.")
@@ -150,53 +155,63 @@ class ClientePanel(ctk.CTkFrame):
         """
         Actualiza la lista de clientes mostrada en la interfaz.
         """
-        self.cliente_list.delete("1.0", "end")
+    # Habilitar temporalmente el TextBox para modificar su contenido
+        self.cliente_list.configure(state="normal")  
+        self.cliente_list.delete("1.0", "end")  # Limpiar el contenido actual
+
+    # Obtener la lista de clientes desde la base de datos
         clientes = ClienteCRUD.get_clientes(self.db)
-        for cliente in clientes:
-            self.cliente_list.insert("end", f"{cliente.email} | Nombre: {cliente.nombre}\\n")
+        if clientes:
+            for cliente in clientes:
+                self.cliente_list.insert("end", f"{cliente.email} | Nombre: {cliente.nombre}\n")
+        else:
+            self.cliente_list.insert("end", "No hay clientes registrados.\n")
+
+        # Volver a deshabilitar el TextBox para evitar interacción
+        self.cliente_list.configure(state="disabled")
 
     def get_selected_email(self):
-        """
-        Obtiene el email del cliente seleccionado en la lista.
-        """
         try:
             selection = self.cliente_list.get("sel.first", "sel.last")
-            email = selection.split(" | ")[0]  # Extrae el email antes de la barra vertical
+            email = selection.split(" | ")[0]
             return email.strip()
         except:
             return None
+
 
 class IngredientePanel(ctk.CTkFrame):
     def __init__(self, parent, db):
         super().__init__(parent)
         self.db = db
-        self.configure(fg_color="lightgray")
+        self.configure(fg_color="#1c1c1c")
 
-        self.label_title = ctk.CTkLabel(self, text="Gestión de Ingredientes", font=("Arial", 20))
+        self.label_title = ctk.CTkLabel(self, text="Gestión de Ingredientes", font=("Arial", 22, "bold"))
         self.label_title.pack(pady=10)
 
-        # Formulario de ingreso
         self.nombre_entry = self.create_form_entry("Nombre")
         self.tipo_entry = self.create_form_entry("Tipo")
         self.cantidad_entry = self.create_form_entry("Cantidad")
         self.unidad_entry = self.create_form_entry("Unidad de Medida")
 
-        self.add_button = ctk.CTkButton(self, text="Añadir Ingrediente", command=self.add_ingrediente)
+        self.add_button = ctk.CTkButton(self, text="Añadir Ingrediente", command=self.add_ingrediente, corner_radius=10)
         self.add_button.pack(pady=10)
 
-        # Lista de ingredientes
-        self.ingrediente_list = ctk.CTkTextbox(self, height=300)
+        self.ingrediente_list = ctk.CTkTextbox(self, height=300, corner_radius=10)
         self.ingrediente_list.pack(pady=10)
+        self.ingrediente_list.configure(state="disabled")
 
         self.refresh_list()
 
     def create_form_entry(self, label_text):
-        frame = ctk.CTkFrame(self)
+        frame = ctk.CTkFrame(self, fg_color="#2c2c2c", corner_radius=10)
         frame.pack(pady=5, padx=10)
-        label = ctk.CTkLabel(frame, text=label_text)
-        label.pack(side="left", padx=5)
-        entry = ctk.CTkEntry(frame)
-        entry.pack(side="right", fill="x", expand=True)
+
+        label = ctk.CTkLabel(frame, text=label_text, font=("Arial", 14))
+        label.pack(side="left", padx=10)
+
+        entry = ctk.CTkEntry(frame, corner_radius=10)
+        entry.pack(side="right", fill="x", expand=True, padx=10)
+
         return entry
 
     def add_ingrediente(self):
@@ -229,7 +244,5 @@ class IngredientePanel(ctk.CTkFrame):
 
 
 if __name__ == "__main__":
-
-    
     app = MainApp()
     app.mainloop()
