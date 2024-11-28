@@ -7,7 +7,7 @@ SQLALCHEMY_DATABASE_URL = "sqlite:///./restaurante.db"  # Cambia la ruta según 
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 
 # Declarar la base para los modelos
-Base = declarative_base()
+base = declarative_base()
 
 # Crear sesión local
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

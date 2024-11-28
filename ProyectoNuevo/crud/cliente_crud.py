@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from ProyectoNuevo.models import Cliente
+from models import Cliente
 import logging
 
 
@@ -26,25 +26,15 @@ class ClienteCRUD:
         return db.query(Cliente).all()
 
     @staticmethod
-    def update_cliente(db: Session, email_actual: str, nuevo_nombre: str, nuevo_email: str = None):
-        # Buscar cliente por email actual
-        cliente = db.query(Cliente).get(email_actual)
+    def update_cliente(db, email_actual, nuevo_nombre, nuevo_email):
+        cliente = db.query(Cliente).filter_by(email=email_actual).first()
         if not cliente:
-            logging.error(f"No se encontró el cliente con el email '{email_actual}'.")
-            return None
+            return None  # Si no se encuentra el cliente, retorna None
 
-        # Verificar si el nuevo email ya está en uso
-        if nuevo_email:
-            email_existente = db.query(Cliente).filter(Cliente.email == nuevo_email).first()
-            if email_existente:
-                logging.warning(f"El email '{nuevo_email}' ya está asociado a otro cliente.")
-                return None
-            cliente.email = nuevo_email
-
-        # Actualizar el nombre del cliente
+        # Actualizar datos
         cliente.nombre = nuevo_nombre
+        cliente.email = nuevo_email
         db.commit()
-        db.refresh(cliente)
         return cliente
 
     @staticmethod
