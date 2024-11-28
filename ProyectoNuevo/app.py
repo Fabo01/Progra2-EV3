@@ -378,7 +378,7 @@ class PanelCompra(ctk.CTkFrame):
         return entry
 
     def load_menus(self):
-        # Cargar los menús desde la base de datos
+        # Cargar los menús desde la Base de datos
         menus = MenuCRUD.get_menus(self.db)
         menu_names = [menu.nombre for menu in menus]
         
@@ -411,7 +411,7 @@ class PanelCompra(ctk.CTkFrame):
             messagebox.showerror("Error", "La cantidad debe ser un número entero.")
             return
 
-        # Simular la obtención del precio del menú desde la base de datos
+        # Simular la obtención del precio del menú desde la Base de datos
         menu = next((menu for menu in MenuCRUD.get_menus(self.db) if menu.nombre == selected_menu), None)
         if menu:
             # Puedes añadir detalles adicionales si es necesario (como los ingredientes y sus precios)
@@ -447,7 +447,7 @@ class PanelCompra(ctk.CTkFrame):
             messagebox.showerror("Error", "No hay productos en el carrito.")
             return
 
-        # Aquí puedes agregar la lógica para guardar la compra en la base de datos
+        # Aquí puedes agregar la lógica para guardar la compra en la Base de datos
         # Por ejemplo, crear un registro de compra y asociar los productos.
 
         messagebox.showinfo("Compra Realizada", "¡Gracias por tu compra!")
@@ -467,7 +467,7 @@ class PanelCompra(ctk.CTkFrame):
 class PanelPedido(ctk.CTkFrame):
     def __init__(self, parent, db):
         super().__init__(parent)
-        self.db = db  # Recibe la sesión de la base de datos
+        self.db = db  # Recibe la sesión de la Base de datos
         self.configure(fg_color="#1c1c1c")
 
         # Título del Panel de Pedido
@@ -509,7 +509,7 @@ class PanelPedido(ctk.CTkFrame):
         self.selected_pedido = None
 
     def load_pedidos(self):
-        # Cargar los pedidos desde la base de datos
+        # Cargar los pedidos desde la Base de datos
         pedidos = self.get_pedidos_from_db()
         
         if not pedidos:
@@ -558,10 +558,10 @@ class PanelPedido(ctk.CTkFrame):
         pedido = self.db.query(Pedido).filter(Pedido.id == int(pedido_id)).first()
 
         if pedido:
-            # Eliminar el pedido de la base de datos
+            # Eliminar el pedido de la Base de datos
             self.db.delete(pedido)
             self.db.commit()
-            self.load_pedidos()  # Recargar los pedidos
+            self.load_pedidos()  
             self.pedido_status_label.configure(text="Estado del Pedido: Ninguno")
         else:
             messagebox.showerror("Error", "No se pudo encontrar el pedido.")
