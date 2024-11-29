@@ -1,7 +1,7 @@
 import customtkinter as ctk
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
-from tkinter import messagebox
+from tkinter import messagebox 
 import customtkinter as ctk
 from crud.ingrediente_crud import IngredienteCRUD
 from crud.cliente_crud import ClienteCRUD
@@ -10,6 +10,9 @@ from crud.pedido_crud import PedidoCRUD
 from database import get_db, engine, Base
 from models import Pedido,Ingrediente,Cliente,MenuIngrediente,Pedido,Menu
 from tkinter import ttk
+from fpdf import FPDF
+from tkinter import messagebox as CTkM
+from datetime import datetime
 
 # Configuración global de estilos
 ctk.set_appearance_mode("dark")  # Opciones: "dark", "light", "system"
@@ -93,6 +96,8 @@ class ClientePanel(ctk.CTkFrame):
         self.cliente_list.pack(pady=20)
         self.refresh_list()
 
+        
+
     def create_treeview(self, model_class):
         columns = [column.name for column in model_class.__table__.columns]
         treeview = ttk.Treeview(self, columns=columns, show="headings")
@@ -113,10 +118,11 @@ class ClientePanel(ctk.CTkFrame):
         return entry
 
     def add_cliente(self):
-        nombre = self.nombre_entry.get()
-        email = self.email_entry.get()
         rut = self.rut_entry.get()
-
+        email = self.email_entry.get()
+        nombre = self.nombre_entry.get()
+        
+        
         if not nombre or not email:
             messagebox.showerror("Error", "Todos los campos son obligatorios.")
             return
@@ -447,17 +453,30 @@ class PanelCompra(ctk.CTkFrame):
     def update_total(self, total):
         self.total_label.configure(text=f"Total: ${total:.2f}")
 
-    def complete_purchase(self):
+    def complete_purchase(self, cliente_email):
         if not self.cart:
             messagebox.showerror("Error", "No hay productos en el carrito.")
             return
 
-        # Aquí puedes agregar la lógica para guardar la compra en la Base de datos
-        # Por ejemplo, crear un registro de compra y asociar los productos.
+        # Crear un nuevo pedido
+        nuevo_pedido = Pedido(
+            descripcion="Compra realizada",
+            total=sum(item[2] for item in self.cart),  # Sumar el total de los productos en el carrito
+            fecha=datetime.now(),
+            cliente_email=cliente_email
+        )
+
+        # Guardar el pedido en la base de datos
+        self.db.add(nuevo_pedido)
+        self.db.commit()
+
+        # Generar la boleta
+        generador_boleta = Generarboleta(nuevo_pedido)
+        generador_boleta.generar_boleta()
 
         messagebox.showinfo("Compra Realizada", "¡Gracias por tu compra!")
-        self.cart.clear()
-        self.refresh_cart_list()
+        self.cart.clear()  # Limpiar el carrito después de la compra
+        self.refresh_cart_list()  # Actualizar la interfaz
 
     def calculate_menu_price(self, menu):
         # Simular la obtención del precio de un menú
@@ -494,6 +513,85 @@ class PanelPedido(ctk.CTkFrame):
         pedidos = PedidoCRUD.leer_pedidos(self.db)
         for pedido in pedidos:
             self.pedido_list.insert("", "end", values=(pedido.id, pedido.descripcion, pedido.total, pedido.fecha, pedido.cliente_email))
+
+
+class Generarboleta:
+    def __init__(self, pedido):
+        self.pedido = pedido
+
+    def generar_boleta(self):
+        if not self.pedido.listamenuspedidos:
+            CTkM(title="Pedido Vacío", message="No hay menús en el pedido para generar la boleta.", icon="warning")
+            return
+
+        # Crear una instancia de FPDF
+        pdf = FPDF()
+        pdf.add_page()
+
+        # Encabezado de la boleta
+        pdf.set_font("Arial", "B", 16)
+        pdf.cell(200, 10, "Boleta Restaurante", ln=True, align="C")
+        pdf.ln(10)
+
+        # Detalles del restaurante (se pueden personalizar)
+        pdf.set_font("Arial", size=12)
+        pdf.cell(0, 10, "Razón Social del Negocio", ln=True)
+        pdf.cell(0, 10, "RUT: 12345678-9", ln=True)
+        pdf.cell(0, 10, "Dirección: Calle Falsa 123", ln=True)
+        pdf.cell(0, 10, "Teléfono: +56 9 1234 5678", ln=True)
+        pdf.ln(10)
+
+        # Detalles del pedido
+        pdf.set_font("Arial", "B", 12)
+        pdf.cell(50, 10, "Nombre", 1)
+        pdf.cell(30, 10, "Cantidad", 1)
+        pdf.cell(50, 10, "Precio Unitario", 1)
+        pdf.cell(50, 10, "Subtotal", 1)
+        pdf.ln()
+
+        pdf.set_font("Arial", size=12)
+
+        menuses = {}
+        
+        for menu in self.pedido.listamenuspedidos:
+            if Menu.nombre in menuses:
+                menuses[menu.nombre]['cantidad'] += 1
+                menuses[menu.nombre]['precio_total'] += menu.precio
+            else:
+                menuses[menu.nombre] = {'cantidad': 1, 'precio_total': menu.precio}
+
+        for menu, datos in menuses.items():
+            pdf.cell(50, 10, menu, 1)
+            pdf.cell(30, 10, str(datos['cantidad']), 1)
+            pdf.cell(50, 10, f"${datos['precio_total'] / datos['cantidad']:.2f}", 1)
+            pdf.cell(50, 10, f"${datos['precio_total']:.2f}", 1)
+            pdf.ln()
+
+        total = self.pedido.calctotal()
+        iva = total * 0.19
+        total_con_iva = total + iva
+        
+        # Mostrar subtotales y totales
+        pdf.set_font("Arial", "B", 12)
+        pdf.cell(0, 10, f"Subtotal: ${total:.2f}", 0, 1, "R")
+        pdf.cell(0, 10, f"IVA (19%): ${iva:.2f}", 0, 1, "R")
+        pdf.cell(0, 10, f"Total: ${total_con_iva:.2f}", 0, 1, "R")
+        pdf.ln(10)
+
+        pdf.set_font("Arial", "I", 12)
+        pdf.cell(0, 10, "Gracias por la compra", ln=True, align="C")
+        pdf.cell(0, 10, "No se aceptan devoluciones", ln=True, align="C")
+        pdf.cell(0, 10, "Contacto: restaurante@gmail.com", ln=True, align="C")
+        pdf.ln()
+
+        # Guardar el archivo PDF
+        rutapdf = "evaluacion3/boleta.pdf" 
+        pdf.output(rutapdf)
+
+        CTkM(title="Boleta Generada", message=f"Boleta generada con éxito en la siguiente ruta: '{rutapdf}'.", icon="info")
+
+
+
 
 if __name__ == "__main__":
     app = MainApp()
