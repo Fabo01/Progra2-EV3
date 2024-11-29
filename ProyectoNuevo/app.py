@@ -13,6 +13,7 @@ from tkinter import ttk
 from fpdf import FPDF
 from tkinter import messagebox as CTkM
 from datetime import datetime
+import tkinter as tk
 
 # Configuración global de estilos
 ctk.set_appearance_mode("dark")  # Opciones: "dark", "light", "system"
@@ -527,15 +528,40 @@ class PanelCompra(ctk.CTkFrame):
 class PanelPedido(ctk.CTkFrame):
     def __init__(self, parent, db):
         super().__init__(parent)
-        self.db = db  # Recibe la sesión de la Base de datos
+        self.db = db
         self.configure(fg_color="#1c1c1c")
 
         # Título del Panel de Pedido
         self.label_title = ctk.CTkLabel(self, text="Panel de Pedidos", font=("Arial", 24, "bold"), text_color="white")
         self.label_title.pack(pady=20)
 
+        # Treeview para mostrar los pedidos
         self.pedido_list = self.create_treeview(Pedido)
-        self.pedido_list.pack(pady=20)
+        self.pedido_list.pack(pady=20,expand=True)
+
+        # Scrollbars para el Treeview
+        self.scrollbar_y = ttk.Scrollbar(self, orient="vertical", command=self.pedido_list.yview)
+        self.pedido_list.configure(yscrollcommand=self.scrollbar_y.set)
+        
+
+        self.scrollbar_x = ttk.Scrollbar(self, orient="horizontal", command=self.pedido_list.xview)
+        self.pedido_list.configure(xscrollcommand=self.scrollbar_x.set)
+        
+
+        # Botones para agregar, editar y eliminar pedidos
+        self.btn_frame = ctk.CTkFrame(self)
+        self.btn_frame.pack(pady=5)
+
+        self.btn_add = ctk.CTkButton(self.btn_frame, text="Agregar Pedido", command=self.add_pedido)
+        self.btn_add.grid(row=0, column=0, padx=5)
+
+        self.btn_edit = ctk.CTkButton(self.btn_frame, text="Editar Pedido", command=self.edit_pedido)
+        self.btn_edit.grid(row=0, column=1, padx=5)
+
+        self.btn_delete = ctk.CTkButton(self.btn_frame, text="Eliminar Pedido", command=self.delete_pedido)
+        self.btn_delete.grid(row=0, column=2, padx=5)
+
+
         self.refresh_list()
 
     def create_treeview(self, model_class):
@@ -543,6 +569,7 @@ class PanelPedido(ctk.CTkFrame):
         treeview = ttk.Treeview(self, columns=columns, show="headings")
         for column in columns:
             treeview.heading(column, text=column.capitalize())
+            treeview.column(column, anchor='center')  # Centrar el texto
         return treeview
 
     def refresh_list(self):
@@ -552,6 +579,52 @@ class PanelPedido(ctk.CTkFrame):
         for pedido in pedidos:
             self.pedido_list.insert("", "end", values=(pedido.id, pedido.descripcion, pedido.total, pedido.fecha, pedido.cliente_email))
 
+    def add_pedido(self):
+        nuevo_pedido = self.open_pedido_form()
+        if nuevo_pedido:
+            try:
+                PedidoCRUD.agregar_pedido(self.db, nuevo_pedido)
+                self.refresh_list()
+                self.show_message("Pedido agregado exitosamente.")
+            except Exception as e:
+                self.show_message(f"Error al agregar pedido: {e}")
+
+    def edit_pedido(self):
+        selected_item = self.pedido_list.selection()
+        if selected_item:
+            pedido_id = self.pedido_list.item(selected_item)['values'][0]
+            pedido = PedidoCRUD.obtener_pedido_por_id(self.db, pedido_id)
+            pedido_actualizado = self.open_pedido_form(pedido)
+            if pedido_actualizado:
+                try:
+                    PedidoCRUD.editar_pedido(self.db, pedido_actualizado)
+                    self.refresh_list()
+                    self.show_message("Pedido editado exitosamente.")
+                except Exception as e:
+                    self.show_message(f"Error al editar pedido: {e}")
+
+    def delete_pedido(self):
+        selected_item = self.pedido_list.selection()
+        if selected_item:
+            pedido_id = self.pedido_list.item(selected_item)['values'][0]
+            try:
+                PedidoCRUD.eliminar_pedido(self.db, pedido_id)
+                self.refresh_list()
+                self.show_message("Pedido eliminado exitosamente.")
+            except Exception as e:
+                self.show_message(f"Error al eliminar pedido: {e}")
+
+    def on_item_double_click(self, event):
+        self.edit_pedido()
+
+    def open_pedido_form(self, pedido=None):
+        # Lógica para abrir un formulario para agregar o editar un pedido
+        pass
+
+    def show_message(self, message):
+        # Método para mostrar mensajes de confirmación o error
+        message_box = ctk.CTkMessageBox(title="Información", message=message)
+        message_box.show()
 
 class Generarboleta:
     def __init__(self, pedido):
