@@ -94,9 +94,8 @@ class ClientePanel(ctk.CTkFrame):
         # Lista de clientes
         self.cliente_list = self.create_treeview(Cliente)
         self.cliente_list.pack(pady=20)
+        self.cliente_list.bind("<<TreeviewSelect>>", self.on_select)  # Bind select event
         self.refresh_list()
-
-        
 
     def create_treeview(self, model_class):
         columns = [column.name for column in model_class.__table__.columns]
@@ -121,7 +120,6 @@ class ClientePanel(ctk.CTkFrame):
         rut = self.rut_entry.get()
         email = self.email_entry.get()
         nombre = self.nombre_entry.get()
-        
         
         if not nombre or not email:
             messagebox.showerror("Error", "Todos los campos son obligatorios.")
@@ -164,8 +162,8 @@ class ClientePanel(ctk.CTkFrame):
         if confirm:
             cliente = ClienteCRUD.delete_cliente(self.db, email_actual)
             if cliente:
-                messagebox.showinfo("Éxito", f"Cliente '{email_actual}' eliminado con éxito.")
-            else:
+              messagebox.showinfo("Éxito", f"Cliente '{email_actual}' eliminado con éxito.")
+        else:
                 messagebox.showerror("Error", f"No se pudo eliminar el cliente '{email_actual}'.")
         self.refresh_list()
 
@@ -174,13 +172,21 @@ class ClientePanel(ctk.CTkFrame):
             self.cliente_list.delete(item)
         clientes = ClienteCRUD.get_clientes(self.db)
         for cliente in clientes:
-            self.cliente_list.insert("", "end", values=(cliente.email, cliente.nombre))
+            self.cliente_list.insert("", "end", values=(cliente.rut, cliente.email, cliente.nombre))  # Asegúrate de incluir el rut
 
     def get_selected_email(self):
         selected_item = self.cliente_list.selection()
         if selected_item:
-            return self.cliente_list.item(selected_item)["values"][0]
+            return self.cliente_list.item(selected_item)["values"][1]  # Cambia el índice para obtener el email
         return None
+
+    def on_select(self, event):
+        selected_item = self.cliente_list.selection()
+        if selected_item:
+            values = self.cliente_list.item(selected_item)["values"]
+            self.rut_entry.set(values[0])  # Asigna el rut al campo correspondiente
+            self.email_entry.set(values[1])  # Asigna el email al campo correspondiente
+            self.nombre_entry.set(values[2])  # Asigna el nombre al campo correspondiente
 
 class IngredientePanel(ctk.CTkFrame):
     def __init__(self, parent, db):
