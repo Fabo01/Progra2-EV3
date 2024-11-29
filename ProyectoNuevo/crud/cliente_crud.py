@@ -5,14 +5,14 @@ from models import Cliente
 class ClienteCRUD:
 
     @staticmethod
-    def create_cliente(db: Session, nombre: str, email: str):
+    def create_cliente(db: Session,rut: str ,nombre: str, email: str):
         try:
-            cliente_existente = db.query(Cliente).filter_by(email=email).first()
+            cliente_existente = db.query(Cliente).filter_by(rut=rut).first()
             if cliente_existente:
-                logging.warning(f"El cliente con el email '{email}' ya existe.")
+                logging.warning(f"El cliente con el rut '{rut}' ya existe.")
                 return cliente_existente
             
-            cliente = Cliente(nombre=nombre, email=email)
+            cliente = Cliente(rut=rut, nombre=nombre, email=email)
             db.add(cliente)
             db.commit()
             db.refresh(cliente)

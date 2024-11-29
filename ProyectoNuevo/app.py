@@ -11,7 +11,6 @@ from database import get_db, engine, Base
 from models import Pedido,Ingrediente,Cliente,MenuIngrediente,Pedido,Menu
 from tkinter import ttk
 
-
 # Configuración global de estilos
 ctk.set_appearance_mode("dark")  # Opciones: "dark", "light", "system"
 ctk.set_default_color_theme("blue")  # Opciones: "blue", "green", "dark-blue"
@@ -77,6 +76,7 @@ class ClientePanel(ctk.CTkFrame):
         # Formulario
         self.nombre_entry = self.create_form_entry("Nombre del Cliente")
         self.email_entry = self.create_form_entry("Email del Cliente")
+        self.rut_entry = self.create_form_entry("Rut del Cliente")
 
         # Botones de acción
         self.add_button = ctk.CTkButton(self, text="Registrar Cliente", command=self.add_cliente, corner_radius=10)
@@ -115,12 +115,13 @@ class ClientePanel(ctk.CTkFrame):
     def add_cliente(self):
         nombre = self.nombre_entry.get()
         email = self.email_entry.get()
+        rut = self.rut_entry.get()
 
         if not nombre or not email:
             messagebox.showerror("Error", "Todos los campos son obligatorios.")
             return
 
-        cliente = ClienteCRUD.create_cliente(self.db, nombre, email)
+        cliente = ClienteCRUD.create_cliente(self.db, rut, nombre, email)
         if cliente:
             messagebox.showinfo("Éxito", f"Cliente '{nombre}' registrado con éxito.")
         else:
@@ -174,7 +175,6 @@ class ClientePanel(ctk.CTkFrame):
         if selected_item:
             return self.cliente_list.item(selected_item)["values"][0]
         return None
-
 
 class IngredientePanel(ctk.CTkFrame):
     def __init__(self, parent, db):
@@ -244,7 +244,6 @@ class IngredientePanel(ctk.CTkFrame):
         ingredientes = IngredienteCRUD.get_ingredientes(self.db)
         for ingrediente in ingredientes:
             self.ingrediente_list.insert("", "end", values=(ingrediente.nombre, ingrediente.tipo, ingrediente.cantidad, ingrediente.unidad))
-
 
 class MenuPanel(ctk.CTkFrame):
     def __init__(self, parent, db):
@@ -323,7 +322,6 @@ class MenuPanel(ctk.CTkFrame):
         menus = MenuCRUD.get_menus(self.db)  # Llama al método get_menus para obtener los menús
         for menu in menus:
             self.menu_list.insert("", "end", values=(menu.nombre, menu.descripcion))
-
 
 class PanelCompra(ctk.CTkFrame):
     def __init__(self, parent, db):
@@ -469,8 +467,6 @@ class PanelCompra(ctk.CTkFrame):
             precio_total += item.ingrediente.precio * item.cantidad
         return precio_total
 
-
-
 class PanelPedido(ctk.CTkFrame):
     def __init__(self, parent, db):
         super().__init__(parent)
@@ -498,7 +494,6 @@ class PanelPedido(ctk.CTkFrame):
         pedidos = PedidoCRUD.leer_pedidos(self.db)
         for pedido in pedidos:
             self.pedido_list.insert("", "end", values=(pedido.id, pedido.descripcion, pedido.total, pedido.fecha, pedido.cliente_email))
-
 
 if __name__ == "__main__":
     app = MainApp()
