@@ -255,7 +255,7 @@ class IngredientePanel(ctk.CTkFrame):
             self.ingrediente_list.delete(item)
         ingredientes = IngredienteCRUD.get_ingredientes(self.db)
         for ingrediente in ingredientes:
-            self.ingrediente_list.insert("", "end", values=(ingrediente.nombre, ingrediente.tipo, ingrediente.cantidad, ingrediente.unidad))
+            self.ingrediente_list.insert("", "end", values=(ingrediente.id, ingrediente.nombre, ingrediente.tipo, ingrediente.cantidad, ingrediente.unidad))
 
 class MenuPanel(ctk.CTkFrame):
     def __init__(self, parent, db):
