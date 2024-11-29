@@ -321,12 +321,44 @@ class MenuPanel(ctk.CTkFrame):
         self.refresh_list()
 
     def update_menu(self):
-        # Aquí deberías implementar la lógica para actualizar un menú seleccionado
-        pass
+        selected_item = self.menu_list.selection()
+        if not selected_item:
+            messagebox.showerror("Error", "Debes seleccionar un menú para editar.")
+            return
+
+        menu_id = self.menu_list.item(selected_item, 'values')[0]
+        nombre = self.nombre_entry.get()
+        descripcion = self.descripcion_entry.get()
+
+        if not nombre or not descripcion:
+            messagebox.showerror("Error", "Todos los campos son obligatorios.")
+            return
+
+        # Aquí deberías actualizar los ingredientes si es necesario
+        ingredientes = []  # Asocia aquí los ingredientes que se desean al menú
+
+        updated_menu = MenuCRUD.update_menu(self.db, menu_id, nombre, descripcion, ingredientes)
+        if updated_menu:
+            messagebox.showinfo("Éxito", f"Menú '{nombre}' actualizado con éxito.")
+        else:
+            messagebox.showerror("Error", f"Error al actualizar el menú '{nombre}'.")
+        self.refresh_list()
 
     def delete_menu(self):
-        # Aquí deberías implementar la lógica para eliminar un menú seleccionado
-        pass
+        selected_item = self.menu_list.selection()
+        if not selected_item:
+            messagebox.showerror("Error", "Debes seleccionar un menú para eliminar.")
+            return
+
+        menu_id = self.menu_list.item(selected_item, 'values')[0]
+        confirm = messagebox.askyesno("Confirmar eliminación", "¿Estás seguro de que deseas eliminar este menú?")
+        if confirm:
+            result = MenuCRUD.delete_menu(self.db, menu_id)
+            if result:
+                messagebox.showinfo("Éxito", "Menú eliminado con éxito.")
+            else:
+                messagebox.showerror("Error", "Error al eliminar el menú.")
+            self.refresh_list()
 
     def refresh_list(self):
         for item in self.menu_list.get_children():
