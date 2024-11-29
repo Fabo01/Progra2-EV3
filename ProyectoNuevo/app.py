@@ -333,7 +333,7 @@ class MenuPanel(ctk.CTkFrame):
             self.menu_list.delete(item)
         menus = MenuCRUD.get_menus(self.db)  # Llama al método get_menus para obtener los menús
         for menu in menus:
-            self.menu_list.insert("", "end", values=(menu.nombre, menu.descripcion))
+            self.menu_list.insert("", "end", values=(menu.id,menu.nombre, menu.descripcion))
 
 class PanelCompra(ctk.CTkFrame):
     def __init__(self, parent, db):
