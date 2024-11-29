@@ -3,7 +3,7 @@ from sqlalchemy.orm import relationship
 from database import Base
 class Cliente(Base):
     __tablename__ = "clientes"
-    id = Column(Integer, primary_key=True, index=True)
+    rut = Column(String(9), primary_key=True, index=True)
     email = Column(String, nullable=False)
     nombre = Column(String, nullable=False)
     pedidos = relationship("Pedido", back_populates="cliente")
