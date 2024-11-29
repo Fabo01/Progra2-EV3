@@ -8,7 +8,8 @@ from crud.cliente_crud import ClienteCRUD
 from crud.menu_crud import MenuCRUD
 from crud.pedido_crud import PedidoCRUD
 from database import get_db, engine, Base
-from models import Pedido,Ingrediente,Cliente,MenuIngrediente,Pedido
+from models import Pedido,Ingrediente,Cliente,MenuIngrediente,Pedido,Menu
+from tkinter import ttk
 
 
 # Configuración global de estilos
@@ -88,12 +89,16 @@ class ClientePanel(ctk.CTkFrame):
         self.delete_button.pack(pady=10)
 
         # Lista de clientes
-        self.cliente_list = ctk.CTkTextbox(self, height=300, width=500, corner_radius=10)
+        self.cliente_list = self.create_treeview(Cliente)
         self.cliente_list.pack(pady=20)
-        self.cliente_list.configure(state="disabled")
-
-        # Actualizar la lista al inicio
         self.refresh_list()
+
+    def create_treeview(self, model_class):
+        columns = [column.name for column in model_class.__table__.columns]
+        treeview = ttk.Treeview(self, columns=columns, show="headings")
+        for column in columns:
+            treeview.heading(column, text=column.capitalize())
+        return treeview
 
     def create_form_entry(self, label_text):
         frame = ctk.CTkFrame(self, fg_color="#2c2c2c", corner_radius=10)
@@ -158,22 +163,17 @@ class ClientePanel(ctk.CTkFrame):
         self.refresh_list()
 
     def refresh_list(self):
-        self.cliente_list.configure(state="normal")
-        self.cliente_list.delete("1.0", "end")
-
+        for item in self.cliente_list.get_children():
+            self.cliente_list.delete(item)
         clientes = ClienteCRUD.get_clientes(self.db)
         for cliente in clientes:
-            self.cliente_list.insert("end", f"{cliente.email} | {cliente.nombre}\n")
-        
-        self.cliente_list.configure(state="disabled")
+            self.cliente_list.insert("", "end", values=(cliente.email, cliente.nombre))
 
     def get_selected_email(self):
-        try:
-            selection = self.cliente_list.get("sel.first", "sel.last")
-            email = selection.split(" | ")[0]
-            return email.strip()
-        except:
-            return None
+        selected_item = self.cliente_list.selection()
+        if selected_item:
+            return self.cliente_list.item(selected_item)["values"][0]
+        return None
 
 
 class IngredientePanel(ctk.CTkFrame):
@@ -193,11 +193,16 @@ class IngredientePanel(ctk.CTkFrame):
         self.add_button = ctk.CTkButton(self, text="Añadir Ingrediente", command=self.add_ingrediente, corner_radius=10)
         self.add_button.pack(pady=10)
 
-        self.ingrediente_list = ctk.CTkTextbox(self, height=450, width=300, corner_radius=10)
+        self.ingrediente_list = self.create_treeview(Ingrediente)
         self.ingrediente_list.pack(pady=10)
-        self.ingrediente_list.configure(state="disabled")
-
         self.refresh_list()
+
+    def create_treeview(self, model_class):
+        columns = [column.name for column in model_class.__table__.columns]
+        treeview = ttk.Treeview(self, columns=columns, show="headings")
+        for column in columns:
+            treeview.heading(column, text=column.capitalize())
+        return treeview
 
     def create_form_entry(self, label_text):
         frame = ctk.CTkFrame(self, fg_color="#2c2c2c", corner_radius=10)
@@ -234,10 +239,11 @@ class IngredientePanel(ctk.CTkFrame):
             self.refresh_list()
 
     def refresh_list(self):
-        self.ingrediente_list.delete("1.0", "end")
+        for item in self.ingrediente_list.get_children():
+            self.ingrediente_list.delete(item)
         ingredientes = IngredienteCRUD.get_ingredientes(self.db)
         for ingrediente in ingredientes:
-            self.ingrediente_list.insert("end", f"{ingrediente.nombre} ({ingrediente.tipo}) - {ingrediente.cantidad} {ingrediente.unidad}\n")
+            self.ingrediente_list.insert("", "end", values=(ingrediente.nombre, ingrediente.tipo, ingrediente.cantidad, ingrediente.unidad))
 
 
 class MenuPanel(ctk.CTkFrame):
@@ -262,12 +268,16 @@ class MenuPanel(ctk.CTkFrame):
         self.delete_button.pack(pady=10)
 
         # Lista de menús
-        self.menu_list = ctk.CTkTextbox(self, height=300, width=500, corner_radius=10)
+        self.menu_list = self.create_treeview(Menu)
         self.menu_list.pack(pady=20)
-        self.menu_list.configure(state="disabled")
-
-        # Actualizar la lista al inicio
         self.refresh_list()
+
+    def create_treeview(self, model_class):
+        columns = [column.name for column in model_class.__table__.columns]
+        treeview = ttk.Treeview(self, columns=columns, show="headings")
+        for column in columns:
+            treeview.heading(column, text=column.capitalize())
+        return treeview
 
     def create_form_entry(self, label_text):
         frame = ctk.CTkFrame(self, fg_color="#2c2c2c", corner_radius=10)
@@ -308,14 +318,11 @@ class MenuPanel(ctk.CTkFrame):
         pass
 
     def refresh_list(self):
-        self.menu_list.configure(state="normal")
-        self.menu_list.delete("1.0", "end")
-
+        for item in self.menu_list.get_children():
+            self.menu_list.delete(item)
         menus = MenuCRUD.get_menus(self.db)  # Llama al método get_menus para obtener los menús
         for menu in menus:
-            self.menu_list.insert("end", f"{menu.nombre} | {menu.descripcion}\n")
-
-        self.menu_list.configure(state="disabled")
+            self.menu_list.insert("", "end", values=(menu.nombre, menu.descripcion))
 
 
 class PanelCompra(ctk.CTkFrame):
@@ -474,97 +481,23 @@ class PanelPedido(ctk.CTkFrame):
         self.label_title = ctk.CTkLabel(self, text="Panel de Pedidos", font=("Arial", 24, "bold"), text_color="white")
         self.label_title.pack(pady=20)
 
-        # Frame para la lista de pedidos
-        self.pedido_frame = ctk.CTkFrame(self, fg_color="#2c2c2c", corner_radius=10)
-        self.pedido_frame.pack(pady=10, fill="x", padx=20)
+        self.pedido_list = self.create_treeview(Pedido)
+        self.pedido_list.pack(pady=20)
+        self.refresh_list()
 
-        # Listbox para mostrar los pedidos existentes
-        self.pedido_listbox = ctk.CTkTextbox(self.pedido_frame, width=400, height=200, corner_radius=10, font=("Arial", 14))
-        self.pedido_listbox.pack(side="left", padx=10)
+    def create_treeview(self, model_class):
+        columns = [column.name for column in model_class.__table__.columns]
+        treeview = ttk.Treeview(self, columns=columns, show="headings")
+        for column in columns:
+            treeview.heading(column, text=column.capitalize())
+        return treeview
 
-        # Scrollbar para la lista de pedidos
-        self.pedido_scrollbar = ctk.CTkScrollbar(self.pedido_frame, command=self.pedido_listbox.yview)
-        self.pedido_scrollbar.pack(side="right", fill="y")
-
-        # Configurar la scrollbar para interactuar con el textbox
-        self.pedido_listbox.configure(yscrollcommand=self.pedido_scrollbar.set)
-
-        # Botón para cargar pedidos
-        self.load_pedidos_button = ctk.CTkButton(self, text="Cargar Pedidos", command=self.load_pedidos, corner_radius=10)
-        self.load_pedidos_button.pack(pady=10)
-
-        # Botón para marcar un pedido como completado
-        self.complete_pedido_button = ctk.CTkButton(self, text="Marcar como Completado", command=self.complete_pedido, corner_radius=10, fg_color="#3c99dc")
-        self.complete_pedido_button.pack(pady=10)
-
-        # Botón para eliminar un pedido
-        self.delete_pedido_button = ctk.CTkButton(self, text="Eliminar Pedido", command=self.delete_pedido, corner_radius=10, fg_color="#e74c3c")
-        self.delete_pedido_button.pack(pady=10)
-
-        # Label para mostrar el estado del pedido seleccionado
-        self.pedido_status_label = ctk.CTkLabel(self, text="Estado del Pedido: Ninguno", font=("Arial", 16, "bold"), text_color="white")
-        self.pedido_status_label.pack(pady=10)
-
-        # Pedido seleccionado
-        self.selected_pedido = None
-
-    def load_pedidos(self):
-        # Cargar los pedidos desde la Base de datos
-        pedidos = self.get_pedidos_from_db()
-        
-        if not pedidos:
-            messagebox.showinfo("Sin Pedidos", "No hay pedidos disponibles.")
-            return
-        
-        # Limpiar la lista actual
-        self.pedido_listbox.delete(0, "end")
-
-        # Agregar los pedidos a la lista
+    def refresh_list(self):
+        for item in self.pedido_list.get_children():
+            self.pedido_list.delete(item)
+        pedidos = PedidoCRUD.leer_pedidos(self.db)
         for pedido in pedidos:
-            self.pedido_listbox.insert("end", f"Pedido #{pedido.id} - {pedido.estado}")
-
-    def get_pedidos_from_db(self):
-        return self.db.query(Pedido).all()  
-
-    def complete_pedido(self):
-        # Obtener el pedido seleccionado
-        selected_index = self.pedido_listbox.curselection()
-        
-        if not selected_index:
-            messagebox.showerror("Error", "Por favor, selecciona un pedido.")
-            return
-        
-        pedido_id = self.pedido_listbox.get(selected_index).split(" ")[1]  # Extracto el ID del pedido
-        pedido = self.db.query(Pedido).filter(Pedido.id == int(pedido_id)).first()
-
-        if pedido:
-            # Cambiar el estado del pedido a 'completado'
-            pedido.estado = "Completado"
-            self.db.commit()
-            self.load_pedidos()  # Recargar los pedidos
-            self.pedido_status_label.configure(text=f"Estado del Pedido: Completado")
-        else:
-            messagebox.showerror("Error", "No se pudo encontrar el pedido.")
-
-    def delete_pedido(self):
-        # Obtener el pedido seleccionado
-        selected_index = self.pedido_listbox.curselection()
-        
-        if not selected_index:
-            messagebox.showerror("Error", "Por favor, selecciona un pedido para eliminar.")
-            return
-        
-        pedido_id = self.pedido_listbox.get(selected_index).split(" ")[1]  # Extracto el ID del pedido
-        pedido = self.db.query(Pedido).filter(Pedido.id == int(pedido_id)).first()
-
-        if pedido:
-            # Eliminar el pedido de la Base de datos
-            self.db.delete(pedido)
-            self.db.commit()
-            self.load_pedidos()  
-            self.pedido_status_label.configure(text="Estado del Pedido: Ninguno")
-        else:
-            messagebox.showerror("Error", "No se pudo encontrar el pedido.")
+            self.pedido_list.insert("", "end", values=(pedido.id, pedido.descripcion, pedido.total, pedido.fecha, pedido.cliente_email))
 
 
 if __name__ == "__main__":
