@@ -1026,15 +1026,9 @@ class PanelPedido(ctk.CTkFrame):
         self.pedido_list = self.create_treeview(Pedido)
         self.pedido_list.grid(row=1, column=0, pady=20, sticky="nsew", columnspan=3)
 
-
-        
-
         # Botones para agregar, editar y eliminar pedidos
         self.btn_frame = ctk.CTkFrame(self)
         self.btn_frame.grid(row=3, column=0, pady=5, columnspan=3)
-
-        self.btn_add = ctk.CTkButton(self.btn_frame, text="Agregar Pedido", command=self.add_pedido)
-        self.btn_add.grid(row=0, column=0, padx=5)
 
         self.btn_edit = ctk.CTkButton(self.btn_frame, text="Editar Pedido", command=self.edit_pedido)
         self.btn_edit.grid(row=0, column=1, padx=5)
@@ -1075,40 +1069,81 @@ class PanelPedido(ctk.CTkFrame):
 
     def edit_pedido(self):
         selected_item = self.pedido_list.selection()
-        if selected_item:
-            pedido_id = self.pedido_list.item(selected_item)['values'][0]
-            pedido = PedidoCRUD.obtener_pedido_por_id(self.db, pedido_id)
-            pedido_actualizado = self.open_pedido_form(pedido)
-            if pedido_actualizado:
-                try:
-                    PedidoCRUD.actualizar_pedido(self.db, pedido_actualizado)
-                    self.refresh_list()
-                    self.show_message("Pedido editado exitosamente.")
-                except Exception as e:
-                    self.show_message(f"Error al editar pedido: {e}")
+        if not selected_item:
+            CTkM.showwarning("Advertencia", "Selecciona un pedido para editar.")
+            return
+
+        # Obtener el ID del pedido seleccionado
+        pedido_id = self.pedido_list.item(selected_item)['values'][0]
+        pedido = next((p for p in PedidoCRUD.leer_pedidos(self.db) if p.id == pedido_id), None)
+
+        if not pedido:
+            CTkM.showerror("Error", f"No se encontró el pedido con ID {pedido_id}.")
+            return
+
+        # Crear ventana para editar descripción
+        self.edit_window = ctk.CTkToplevel(self)
+        self.edit_window.title("Editar Descripción del Pedido")
+        self.edit_window.geometry("400x200")
+        self.edit_window.configure(fg_color="#1c1c1c")
+
+        # Etiqueta y campo de entrada para la descripción
+        label_desc = ctk.CTkLabel(self.edit_window, text="Nueva Descripción:", font=("Arial", 14))
+        label_desc.grid(row=0, column=0, padx=10, pady=10, sticky="w")
+
+        entry_desc = ctk.CTkEntry(self.edit_window, width=300, corner_radius=10)
+        entry_desc.insert(0, pedido.descripcion)  # Descripción actual
+        entry_desc.grid(row=0, column=1, padx=10, pady=10, sticky="w")
+
+        # Botón para guardar cambios
+        save_button = ctk.CTkButton(
+            self.edit_window,
+            text="Guardar Cambios",
+            command=lambda: self.save_pedido_description(pedido_id, entry_desc.get()),
+            corner_radius=10
+        )
+        save_button.grid(row=1, column=0, columnspan=2, pady=20)
 
     def delete_pedido(self):
         selected_item = self.pedido_list.selection()
         if selected_item:
             pedido_id = self.pedido_list.item(selected_item)['values'][0]
-            try:
-                PedidoCRUD.borrar_pedido(self.db, pedido_id)
-                self.refresh_list()
-                self.show_message("Pedido eliminado exitosamente.")
-            except Exception as e:
-                self.show_message(f"Error al eliminar pedido: {e}")
+            confirm = CTkM.askyesno(
+                "Confirmar Eliminación",
+                f"¿Estás seguro de que deseas eliminar el pedido con ID {pedido_id}?"
+            )
+            if confirm:
+                try:
+                    PedidoCRUD.borrar_pedido(self.db, pedido_id)
+                    self.refresh_list()
+                    self.show_message("Pedido eliminado exitosamente.")
+                except Exception as e:
+                    CTkM.showerror("Error", f"Error al eliminar pedido: {e}")
+        else:
+            CTkM.showwarning("Advertencia", "Selecciona un pedido para eliminar.")
 
     def on_item_double_click(self, event):
         self.edit_pedido()
 
-    def open_pedido_form(self, pedido=None):
-        # Lógica para abrir un formulario para agregar o editar un pedido
-        pass
+    def save_pedido_description(self, pedido_id, nueva_descripcion):
+        if not nueva_descripcion.strip():
+            CTkM.showerror("Error", "La descripción no puede estar vacía.")
+            return
+
+        try:
+            # Actualizar la descripción usando PedidoCRUD
+            pedido_actualizado = PedidoCRUD.actualizar_pedido(self.db, pedido_id, nueva_descripcion)
+            if pedido_actualizado:
+                self.refresh_list()
+                CTkM.showinfo("Éxito", "La descripción del pedido se actualizó correctamente.")
+                self.edit_window.destroy()  # Cerrar la ventana
+            else:
+                CTkM.showerror("Error", "No se pudo actualizar la descripción del pedido.")
+        except Exception as e:
+            CTkM.showerror("Error", f"Error al actualizar descripción: {e}")
 
     def show_message(self, message):
-        # Método para mostrar mensajes de confirmación o error
-        message_box = ctk.CTkMessageBox(title="Información", message=message)
-        message_box.show()
+        CTkM.showinfo("Información", message) 
 
 class GraficosPanel(ctk.CTkFrame):
     def __init__(self, parent, db):
