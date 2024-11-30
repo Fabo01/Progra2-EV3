@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Text
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Text, JSON
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -22,6 +22,7 @@ class Menu(Base):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     nombre = Column(String, nullable=False, unique=True)
     descripcion = Column(Text, nullable=True)
+    ing_necesarios = Column(JSON, nullable=False)  # Dictionary to store ingredient name and quantity
     ingredientes = relationship("MenuIngrediente", back_populates="menu")
 
 class MenuIngrediente(Base):
@@ -41,3 +42,4 @@ class Pedido(Base):
     fecha = Column(DateTime, nullable=False)
     cliente_rut = Column(String, ForeignKey('clientes.rut', onupdate="CASCADE"), nullable=False)
     cliente = relationship("Cliente", back_populates="pedidos")
+    menus = Column(JSON, nullable=False)  # List to store selected menus

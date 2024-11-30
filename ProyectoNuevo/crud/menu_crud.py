@@ -7,13 +7,18 @@ class MenuCRUD:
     @staticmethod
     def create_menu(db: Session, nombre: str, descripcion: str, ingredientes: list):
         try:
+            ing_necesarios = {}
             for ingrediente in ingredientes:
                 ingrediente_existente = db.query(Ingrediente).filter(Ingrediente.id == ingrediente["id"]).first()
                 if not ingrediente_existente:
                     logging.error(f"Ingrediente con ID '{ingrediente['id']}' no existe.")
                     return None
+                if ingrediente_existente.cantidad < ingrediente["cantidad"]:
+                    logging.error(f"No hay suficiente cantidad del ingrediente '{ingrediente_existente.nombre}'.")
+                    return None
+                ing_necesarios[ingrediente_existente.nombre] = ingrediente["cantidad"]
 
-            menu = Menu(nombre=nombre, descripcion=descripcion)
+            menu = Menu(nombre=nombre, descripcion=descripcion, ing_necesarios=ing_necesarios)
             db.add(menu)
             db.commit()
 
@@ -24,6 +29,7 @@ class MenuCRUD:
                     cantidad=ingrediente["cantidad"]
                 )
                 db.add(menu_ingrediente)
+                ingrediente_existente.cantidad -= ingrediente["cantidad"]
 
             db.commit()
             db.refresh(menu)

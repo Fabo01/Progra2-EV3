@@ -2,18 +2,21 @@ import logging
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from models import Pedido, Cliente
+
 class PedidoCRUD:
 
     @staticmethod
-    def crear_pedido(db: Session, cliente_id: int, descripcion: str):
+    def crear_pedido(db: Session, cliente_rut: str, descripcion: str, total: float, fecha: str, menus: list):
         try:
-            cliente = db.query(Cliente).filter_by(id=cliente_id).first()
+            cliente = db.query(Cliente).filter_by(rut=cliente_rut).first()
             if not cliente:
-                logging.error(f"No se encontró el cliente con el ID '{cliente_id}'.")
+                logging.error(f"No se encontró el cliente con el RUT '{cliente_rut}'.")
                 return None
 
-            pedido = Pedido(descripcion=descripcion, cliente=cliente)
+            pedido = Pedido(descripcion=descripcion, total=total, fecha=fecha, cliente=cliente, menus=menus)
             db.add(pedido)
+            db.commit()
+
             db.commit()
             db.refresh(pedido)
             return pedido
@@ -65,3 +68,27 @@ class PedidoCRUD:
             db.rollback()
             logging.error(f"Error al borrar pedido: {e}")
             return None
+
+    @staticmethod
+    def filtrar_pedidos_por_cliente(db: Session, cliente_rut: str):
+        try:
+            return db.query(Pedido).filter(Pedido.cliente_rut == cliente_rut).all()
+        except SQLAlchemyError as e:
+            logging.error(f"Error al filtrar pedidos por cliente: {e}")
+            return []
+
+    @staticmethod
+    def filtrar_pedidos_por_fecha(db: Session, fecha: str):
+        try:
+            return db.query(Pedido).filter(Pedido.fecha == fecha).all()
+        except SQLAlchemyError as e:
+            logging.error(f"Error al filtrar pedidos por fecha: {e}")
+            return []
+
+    @staticmethod
+    def filtrar_pedidos_por_monto_mayor_que(db: Session, monto: float):
+        try:
+            return db.query(Pedido).filter(Pedido.total > monto).all()
+        except SQLAlchemyError as e:
+            logging.error(f"Error al filtrar pedidos por monto: {e}")
+            return []

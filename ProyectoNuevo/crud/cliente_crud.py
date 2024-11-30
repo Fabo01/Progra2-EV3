@@ -5,7 +5,7 @@ from models import Cliente
 class ClienteCRUD:
 
     @staticmethod
-    def create_cliente(db: Session,rut: str ,nombre: str, email: str):
+    def create_cliente(db: Session, rut: str, nombre: str, email: str):
         try:
             cliente_existente = db.query(Cliente).filter_by(rut=rut).first()
             if cliente_existente:
@@ -30,6 +30,14 @@ class ClienteCRUD:
         except SQLAlchemyError as e:
             logging.error(f"Error al obtener clientes: {e}")
             return []
+
+    @staticmethod
+    def get_cliente_by_rut(db: Session, rut: str):
+        try:
+            return db.query(Cliente).filter(Cliente.rut == rut).first()
+        except SQLAlchemyError as e:
+            logging.error(f"Error al buscar cliente por RUT '{rut}': {e}")
+            return None
 
     @staticmethod
     def update_cliente(db: Session, email_actual: str, nuevo_nombre: str, nuevo_email: str):
