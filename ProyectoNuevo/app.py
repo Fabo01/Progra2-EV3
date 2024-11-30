@@ -978,7 +978,7 @@ class PanelPedido(ctk.CTkFrame):
         self.btn_delete.grid(row=0, column=2, padx=5)
 
         self.grid_columnconfigure(1, weight=1)
-        self.grid_rowconfigure(0, weight=1)
+        self.grid_rowconfigure(5, weight=1)
 
         self.refresh_list()
 
