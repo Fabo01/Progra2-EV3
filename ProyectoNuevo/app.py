@@ -69,9 +69,12 @@ class MainApp(ctk.CTk):
         for widget in self.main_frame.winfo_children():
             widget.destroy()
         db_session = next(get_db())
-        panel_class(self.main_frame, db_session).grid(row=0, column=0, sticky="nsew")
+        panel = panel_class(self.main_frame, db_session)
+        panel.grid(row=0, column=0, sticky="nsew")
         self.main_frame.grid_columnconfigure(0, weight=1)
         self.main_frame.grid_rowconfigure(0, weight=1)
+        if hasattr(panel, 'refresh_list'):
+            panel.refresh_list()
 
 class ClientePanel(ctk.CTkFrame):
     def __init__(self, parent, db):
@@ -406,6 +409,7 @@ class IngredientePanel(ctk.CTkFrame):
             self.unidad_entry.delete(0, tk.END)
             self.unidad_entry.insert(0, values[3])
             self.ingrediente_list.insert("", "end", values=())
+
 class MenuPanel(ctk.CTkFrame):
     def __init__(self, parent, db):
         super().__init__(parent)
@@ -462,7 +466,7 @@ class MenuPanel(ctk.CTkFrame):
         self.load_ingredientes()
 
     def create_treeview(self, model_class):
-        columns = [column.name for column in model_class.__table__.columns if column.name not in ['id']]
+        columns = [column.name for column in model_class.__table__.columns if column.name not in ['id']] + ["ing_necesarios"]
         treeview = ttk.Treeview(self, columns=columns, show="headings")
         for column in columns:
             treeview.heading(column, text=column.capitalize())
@@ -781,7 +785,8 @@ class MenuPanel(ctk.CTkFrame):
             self.menu_list.delete(item)
         menus = MenuCRUD.get_menus(self.db)
         for menu in menus:
-            self.menu_list.insert("", "end", values=(menu.nombre, menu.descripcion, menu.precio))
+            ing_necesarios = ", ".join([f"{cantidad}x {nombre}" for nombre, cantidad in menu.ing_necesarios.items()])
+            self.menu_list.insert("", "end", values=(menu.nombre, menu.descripcion, menu.precio, ing_necesarios))
 
     def on_select(self, event):
         selected_item = self.menu_list.selection()
@@ -1043,7 +1048,7 @@ class PanelPedido(ctk.CTkFrame):
         self.refresh_list()
 
     def create_treeview(self, model_class):
-        columns = [column.name for column in model_class.__table__.columns]
+        columns = [column.name for column in model_class.__table__.columns] + ["menus"]
         treeview = ttk.Treeview(self, columns=columns, show="headings")
         for column in columns:
             treeview.heading(column, text=column.capitalize())
@@ -1055,7 +1060,8 @@ class PanelPedido(ctk.CTkFrame):
             self.pedido_list.delete(item)
         pedidos = PedidoCRUD.leer_pedidos(self.db)
         for pedido in pedidos:
-            self.pedido_list.insert("", "end", values=(pedido.id, pedido.descripcion, pedido.total, pedido.fecha, pedido.cliente_rut))
+            menus = ", ".join([f"{menu['cantidad']}x {MenuCRUD.get_menu_by_id(self.db, menu['id']).nombre}" for menu in pedido.menus])
+            self.pedido_list.insert("", "end", values=(pedido.id, pedido.descripcion, pedido.total, pedido.fecha, pedido.cliente_rut, menus))
 
     def add_pedido(self):
         nuevo_pedido = self.open_pedido_form()
@@ -1269,7 +1275,7 @@ class Generarboleta:
         pdf.output(rutapdf)
 
         messagebox.showinfo("Boleta Generada", f"Boleta generada con éxito en la siguiente ruta: '{rutapdf}'.")
-        
+
 if __name__ == "__main__":
     app = MainApp()
     app.mainloop()

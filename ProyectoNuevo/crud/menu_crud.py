@@ -104,7 +104,14 @@ class MenuCRUD:
         try:
             menu = db.query(Menu).get(menu_id)
             if menu:
-                db.query(MenuIngrediente).filter_by(menu_id=menu_id).delete()
+                # Return ingredients to the database
+                menu_ingredientes = db.query(MenuIngrediente).filter_by(menu_id=menu_id).all()
+                for menu_ingrediente in menu_ingredientes:
+                    ingrediente = db.query(Ingrediente).filter_by(id=menu_ingrediente.ingrediente_id).first()
+                    if ingrediente:
+                        ingrediente.cantidad += menu_ingrediente.cantidad
+                    db.delete(menu_ingrediente)
+                
                 db.delete(menu)
                 db.commit()
                 return menu
