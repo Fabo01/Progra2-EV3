@@ -24,7 +24,7 @@ class ClienteCRUD:
             return None
 
     @staticmethod
-    def get_clientes(db: Session):
+    def get_clientes(db: Session): #Es como un Select * from clientes
         try:
             return db.query(Cliente).all()
         except SQLAlchemyError as e:
@@ -32,7 +32,7 @@ class ClienteCRUD:
             return []
 
     @staticmethod
-    def get_cliente_by_rut(db: Session, rut: str):
+    def get_cliente_by_rut(db: Session, rut: str): #Se filtra por rut 
         try:
             return db.query(Cliente).filter(Cliente.rut == rut).first()
         except SQLAlchemyError as e:
@@ -43,7 +43,7 @@ class ClienteCRUD:
     def update_cliente(db: Session, rut: str, nuevo_nombre: str, nuevo_email: str):
         try:
             cliente = db.query(Cliente).filter_by(rut=rut).first()
-            if not cliente:
+            if not cliente: #Si no se cumple lo del rut, no existe el cliente en la base de datos 
                 logging.error(f"No se encontró el cliente con el rut '{rut}'.")
                 return None
 
@@ -64,7 +64,7 @@ class ClienteCRUD:
             cliente = db.query(Cliente).filter(Cliente.email == cliente_email).first()
             if cliente:
                 db.delete(cliente)
-                db.commit()
+                db.commit() #No hay refresh lo actualiza el treeview
                 return cliente
             
             logging.warning(f"No se encontró el cliente con el email '{cliente_email}'.")
