@@ -380,7 +380,7 @@ class IngredientePanel(ctk.CTkFrame):
         
         try:
             cantidad = float(cantidad)
-            ingrediente = IngredienteCRUD.update_ingrediente(self.db, ingrediente_id, cantidad, tipo, unidad)
+            ingrediente = IngredienteCRUD.update_ingrediente(self.db, ingrediente_id,nombre, cantidad, tipo, unidad)
             if (ingrediente):
                 messagebox.showinfo("Éxito", f"Ingrediente '{nombre}' actualizado con éxito.")
                 self.edit_window.destroy()
@@ -397,7 +397,7 @@ class IngredientePanel(ctk.CTkFrame):
             messagebox.showerror("Error", "Selecciona un ingrediente de la lista.")
             return
         
-        ingrediente_id = self.ingrediente_list.item(selected_item)["values"][0]
+        ingrediente_id = self.ingrediente_list.item(selected_item)["values"][-1]
         confirm = messagebox.askyesno("Confirmar Eliminación", f"¿Estás seguro de eliminar el ingrediente '{ingrediente_id}'?")
         if confirm:
             ingrediente = IngredienteCRUD.delete_ingrediente(self.db, ingrediente_id)
@@ -412,7 +412,7 @@ class IngredientePanel(ctk.CTkFrame):
             self.ingrediente_list.delete(item)
         ingredientes = IngredienteCRUD.get_ingredientes(self.db)
         for ingrediente in ingredientes:
-            self.ingrediente_list.insert("", "end", values=(ingrediente.nombre, ingrediente.tipo, ingrediente.cantidad, ingrediente.unidad))
+            self.ingrediente_list.insert("", "end", values=(ingrediente.nombre, ingrediente.tipo, ingrediente.cantidad, ingrediente.unidad,ingrediente.id))
         
     def on_select(self, event):
         selected_item = self.ingrediente_list.selection()
@@ -1157,7 +1157,7 @@ class PanelPedido(ctk.CTkFrame):
             pedidos = PedidoCRUD.leer_pedidos(self.db)
         for pedido in pedidos:
             menus = ", ".join([f"{menu['cantidad']}x {MenuCRUD.get_menu_by_id(self.db, menu['id']).nombre}" for menu in pedido.menus])
-            self.pedido_list.insert("", "end", values=(pedido.id, pedido.descripcion, pedido.total, pedido.fecha, pedido.cliente_rut, menus))
+            self.pedido_list.insert("", "end", values=(pedido.id, pedido.descripcion, pedido.total, pedido.fecha, pedido.cliente_rut,menus))
 
 
 

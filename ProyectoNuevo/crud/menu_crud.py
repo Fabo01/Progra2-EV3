@@ -30,7 +30,7 @@ class MenuCRUD:
                     cantidad=ingrediente["cantidad"]
                 )
                 db.add(menu_ingrediente)
-                ingrediente_existente.cantidad -= ingrediente["cantidad"]
+                
 
             db.commit()
             db.refresh(menu)

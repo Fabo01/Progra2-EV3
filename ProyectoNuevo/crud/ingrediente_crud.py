@@ -49,12 +49,15 @@ class IngredienteCRUD:
             return None
 
     @staticmethod
-    def update_ingrediente(db: Session, ingrediente_id: int, cantidad: float = None, tipo: str = None, unidad: str = None):
+    def update_ingrediente(db: Session, ingrediente_id: int, nombre : str = None,cantidad: float = None, tipo: str = None, unidad: str = None):
         try:
             ingrediente = db.query(Ingrediente).filter(Ingrediente.id == ingrediente_id).first()
             if not ingrediente:
                 logging.error(f"No se encontró el ingrediente con ID '{ingrediente_id}'.")
                 return None
+            
+            if nombre is not None:
+                ingrediente.nombre = nombre
 
             if cantidad is not None:
                 ingrediente.cantidad = cantidad
