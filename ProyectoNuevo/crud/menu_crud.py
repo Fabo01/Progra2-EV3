@@ -58,6 +58,14 @@ class MenuCRUD:
             return None
 
     @staticmethod
+    def get_menu_by_id(db: Session, menu_id: int):
+        try:
+            return db.query(Menu).filter(Menu.id == menu_id).first()
+        except SQLAlchemyError as e:
+            logging.error(f"Error al buscar menú por ID '{menu_id}': {e}")
+            return None
+
+    @staticmethod
     def update_menu(db: Session, menu_id: int, nuevo_nombre: str = None, nueva_descripcion: str = None, nuevo_precio: float = None, nuevos_ingredientes: list = None):
         try:
             menu = db.query(Menu).get(menu_id)

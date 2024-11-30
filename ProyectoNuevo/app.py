@@ -498,6 +498,13 @@ class MenuPanel(ctk.CTkFrame):
             messagebox.showerror("Error", "La cantidad debe ser un número.")
             return
 
+        # Check if the ingredient already exists in the list
+        for item in self.ingredientes_list.get_children():
+            existing_ingrediente, _ = self.ingredientes_list.item(item, "values")
+            if existing_ingrediente == ingrediente:
+                messagebox.showerror("Error", "El ingrediente ya está en la lista.")
+                return
+
         self.ingredientes_list.insert("", "end", values=(ingrediente, cantidad))
         self.cantidad_entry.delete(0, "end")
 
@@ -522,6 +529,14 @@ class MenuPanel(ctk.CTkFrame):
         except ValueError:
             messagebox.showerror("Error", "La cantidad debe ser un número.")
             return
+
+        # Check if the ingredient already exists in the list
+        for item in self.ingredientes_list.get_children():
+            if item != selected_item[0]:
+                existing_ingrediente, _ = self.ingredientes_list.item(item, "values")
+                if existing_ingrediente == ingrediente:
+                    messagebox.showerror("Error", "El ingrediente ya está en la lista.")
+                    return
 
         self.ingredientes_list.item(selected_item, values=(ingrediente, cantidad))
         self.cantidad_entry.delete(0, "end")
@@ -656,6 +671,13 @@ class MenuPanel(ctk.CTkFrame):
             messagebox.showerror("Error", "La cantidad debe ser un número.")
             return
 
+        # Check if the ingredient already exists in the list
+        for item in self.edit_ingredientes_list.get_children():
+            existing_ingrediente, _ = self.edit_ingredientes_list.item(item, "values")
+            if existing_ingrediente == ingrediente:
+                messagebox.showerror("Error", "El ingrediente ya está en la lista.")
+                return
+
         self.edit_ingredientes_list.insert("", "end", values=(ingrediente, cantidad))
         self.edit_cantidad_entry.delete(0, "end")
 
@@ -680,6 +702,14 @@ class MenuPanel(ctk.CTkFrame):
         except ValueError:
             messagebox.showerror("Error", "La cantidad debe ser un número.")
             return
+
+        # Check if the ingredient already exists in the list
+        for item in self.edit_ingredientes_list.get_children():
+            if item != selected_item[0]:
+                existing_ingrediente, _ = self.edit_ingredientes_list.item(item, "values")
+                if existing_ingrediente == ingrediente:
+                    messagebox.showerror("Error", "El ingrediente ya está en la lista.")
+                    return
 
         self.edit_ingredientes_list.item(selected_item, values=(ingrediente, cantidad))
         self.edit_cantidad_entry.delete(0, "end")
@@ -735,15 +765,16 @@ class MenuPanel(ctk.CTkFrame):
             messagebox.showerror("Error", "Selecciona un menú de la lista.")
             return
 
-        menu_id = self.menu_list.item(selected_item, 'values')[0]
-        confirm = messagebox.askyesno("Confirmar Eliminación", f"¿Estás seguro de eliminar el menú '{menu_id}'?")
+        menu_nombre = self.menu_list.item(selected_item, 'values')[0]
+        confirm = messagebox.askyesno("Confirmar Eliminación", f"¿Estás seguro de eliminar el menú '{menu_nombre}'?")
         if confirm:
-            menu = MenuCRUD.delete_menu(self.db, menu_id)
-            if (menu):
-                messagebox.showinfo("Éxito", f"Menú eliminado con éxito.")
+            menu = MenuCRUD.get_menu_by_nombre(self.db, menu_nombre)
+            if menu:
+                MenuCRUD.delete_menu(self.db, menu.id)
+                messagebox.showinfo("Éxito", f"Menú '{menu_nombre}' eliminado con éxito.")
+                self.refresh_list()
             else:
-                messagebox.showerror("Error", f"Error al eliminar el menú.")
-        self.refresh_list()
+                messagebox.showerror("Error", f"No se pudo encontrar el menú '{menu_nombre}'.")
 
     def refresh_list(self):
         for item in self.menu_list.get_children():
@@ -862,8 +893,21 @@ class PanelCompra(ctk.CTkFrame):
             return
         self.cliente_combobox.configure(values=cliente_ruts)
 
+    def verificar_disponibilidad_ingredientes(self, menu, cantidad):
+        ingredientes_necesarios = {}
+        for item in menu.ingredientes:
+            if item.ingrediente.nombre in ingredientes_necesarios:
+                ingredientes_necesarios[item.ingrediente.nombre] += item.cantidad * cantidad
+            else:
+                ingredientes_necesarios[item.ingrediente.nombre] = item.cantidad * cantidad
+
+        for ingrediente_nombre, cantidad_necesaria in ingredientes_necesarios.items():
+            ingrediente = IngredienteCRUD.get_ingrediente_by_nombre(self.db, ingrediente_nombre)
+            if not ingrediente or ingrediente.cantidad < cantidad_necesaria:
+                return False
+        return True
+
     def add_to_cart(self):
-        # Obtener el menú seleccionado del combobox
         selected_menu = self.menu_combobox.get()
         cantidad = self.cantidad_entry.get()
 
@@ -884,20 +928,60 @@ class PanelCompra(ctk.CTkFrame):
             messagebox.showerror("Error", "La cantidad debe ser un número entero.")
             return
 
-        # Simular la obtención del precio del menú desde la Base de datos
         menu = next((menu for menu in MenuCRUD.get_menus(self.db) if menu.nombre == selected_menu), None)
         if menu:
-            # Puedes añadir detalles adicionales si es necesario (como los ingredientes y sus precios)
-            precio = self.calculate_menu_price(menu)  # Obtener el precio total del menú
+            if not self.verificar_disponibilidad_ingredientes(menu, cantidad):
+                messagebox.showerror("Error", "No hay suficientes ingredientes para agregar este menú al carrito.")
+                return
 
+            precio = menu.precio
             total_producto = precio * cantidad
             self.cart.append((selected_menu, cantidad, total_producto))
 
             self.refresh_cart_list()
-            self.cantidad_entry.delete(0, "end")  # Limpiar la cantidad
-
+            self.cantidad_entry.delete(0, "end")
         else:
             messagebox.showerror("Error", "No se pudo encontrar el menú seleccionado.")
+
+    def complete_purchase(self):
+        if not self.cart:
+            messagebox.showerror("Error", "No hay productos en el carrito.")
+            return
+
+        cliente_rut = self.cliente_combobox.get()
+        if cliente_rut == "Selecciona un cliente":
+            messagebox.showerror("Error", "Por favor, selecciona un cliente.")
+            return
+
+        menus = []
+        for item in self.cart:
+            menu_nombre, cantidad, _ = item
+            menu = MenuCRUD.get_menu_by_nombre(self.db, menu_nombre)
+            if menu:
+                if not self.verificar_disponibilidad_ingredientes(menu, cantidad):
+                    messagebox.showerror("Error", f"No hay suficientes ingredientes para el menú '{menu_nombre}'.")
+                    return
+                menus.append({"id": menu.id, "cantidad": cantidad})
+
+        nuevo_pedido = PedidoCRUD.crear_pedido(
+            self.db,
+            cliente_rut=cliente_rut,
+            descripcion="Compra Realizada",
+            total=sum(item[2] for item in self.cart),
+            fecha=datetime.now(),
+            menus=menus
+        )
+
+        if nuevo_pedido:
+            generador_boleta = Generarboleta(nuevo_pedido, self.db)
+            generador_boleta.generar_boleta()
+            messagebox.showinfo("Compra Realizada", "¡Gracias por tu compra!")
+            self.cart.clear()
+            self.refresh_cart_list()
+            self.db.add(nuevo_pedido)
+            self.db.commit()
+        else:
+            messagebox.showerror("Error", "No se pudo realizar la compra.")
 
     def refresh_cart_list(self):
         for item in self.cart_list.get_children():
@@ -912,30 +996,6 @@ class PanelCompra(ctk.CTkFrame):
 
     def update_total(self, total):
         self.total_label.configure(text=f"Total: ${total:.2f}")
-
-    def complete_purchase(self):
-        if not self.cart:
-            messagebox.showerror("Error", "No hay productos en el carrito.")
-            return
-
-        cliente_rut = self.cliente_combobox.get()
-        if cliente_rut == "Selecciona un cliente":
-            messagebox.showerror("Error", "Por favor, selecciona un cliente.")
-            return
-        
-        nuevo_pedido = PedidoCRUD.create_pedido(self.db, cliente_rut=cliente_rut, descripcion="Compra Realizada", total=sum(item[2] for item in self.cart), fecha=datetime.now, menus=[{"id": menu.id, "cantidad": cantidad} for menu, cantidad, _ in self.cart])
-
-        if nuevo_pedido:
-            generador_boleta = Generarboleta(nuevo_pedido)
-            generador_boleta.generar_boleta()
-            messagebox.showinfo("Compra Realizada", "¡Gracias por tu compra!")
-            self.cart.clear()  # Limpiar el carrito después de la compra
-            self.refresh_cart_list()  # Actualizar la interfaz
-            self.db.add(nuevo_pedido)
-            self.db.commit()
-
-        else:
-            messagebox.showerror("Error", "No se pudo realizar la compra.")
 
     def calculate_menu_price(self, menu):
         # Simular la obtención del precio de un menú
@@ -995,7 +1055,7 @@ class PanelPedido(ctk.CTkFrame):
             self.pedido_list.delete(item)
         pedidos = PedidoCRUD.leer_pedidos(self.db)
         for pedido in pedidos:
-            self.pedido_list.insert("", "end", values=(pedido.id, pedido.descripcion, pedido.total, pedido.fecha, pedido.cliente_email))
+            self.pedido_list.insert("", "end", values=(pedido.id, pedido.descripcion, pedido.total, pedido.fecha, pedido.cliente_rut))
 
     def add_pedido(self):
         nuevo_pedido = self.open_pedido_form()
@@ -1134,12 +1194,13 @@ class GraficosPanel(ctk.CTkFrame):
         plt.show()
         graficar_uso_ingredientes(self.db)
 class Generarboleta:
-    def __init__(self, pedido):
+    def __init__(self, pedido, db):
         self.pedido = pedido
+        self.db = db
 
     def generar_boleta(self):
-        if not self.pedido.listamenuspedidos:
-            CTkM(title="Pedido Vacío", message="No hay menús en el pedido para generar la boleta.", icon="warning")
+        if not self.pedido.menus:
+            messagebox.showwarning("Pedido Vacío", "No hay menús en el pedido para generar la boleta.")
             return
 
         # Crear una instancia de FPDF
@@ -1171,12 +1232,13 @@ class Generarboleta:
 
         menuses = {}
         
-        for menu in self.pedido.listamenuspedidos:
-            if Menu.nombre in menuses:
-                menuses[menu.nombre]['cantidad'] += 1
-                menuses[menu.nombre]['precio_total'] += menu.precio
+        for menu in self.pedido.menus:
+            menu_obj = MenuCRUD.get_menu_by_id(self.db, menu["id"])
+            if menu_obj.nombre in menuses:
+                menuses[menu_obj.nombre]['cantidad'] += menu["cantidad"]
+                menuses[menu_obj.nombre]['precio_total'] += menu_obj.precio * menu["cantidad"]
             else:
-                menuses[menu.nombre] = {'cantidad': 1, 'precio_total': menu.precio}
+                menuses[menu_obj.nombre] = {'cantidad': menu["cantidad"], 'precio_total': menu_obj.precio * menu["cantidad"]}
 
         for menu, datos in menuses.items():
             pdf.cell(50, 10, menu, 1)
@@ -1185,7 +1247,7 @@ class Generarboleta:
             pdf.cell(50, 10, f"${datos['precio_total']:.2f}", 1)
             pdf.ln()
 
-        total = self.pedido.calctotal()
+        total = self.pedido.total
         iva = total * 0.19
         total_con_iva = total + iva
         
@@ -1203,11 +1265,11 @@ class Generarboleta:
         pdf.ln()
 
         # Guardar el archivo PDF
-        rutapdf = "evaluacion3/boleta.pdf" 
+        rutapdf = "boleta.pdf" 
         pdf.output(rutapdf)
 
-        CTkM(title="Boleta Generada", message=f"Boleta generada con éxito en la siguiente ruta: '{rutapdf}'.", icon="info")
-
+        messagebox.showinfo("Boleta Generada", f"Boleta generada con éxito en la siguiente ruta: '{rutapdf}'.")
+        
 if __name__ == "__main__":
     app = MainApp()
     app.mainloop()
