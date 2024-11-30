@@ -1,7 +1,8 @@
 import logging
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from models import Pedido, Cliente
+from models import Pedido, Cliente, Ingrediente
+from crud.menu_crud import MenuCRUD
 
 class PedidoCRUD:
 
@@ -13,10 +14,22 @@ class PedidoCRUD:
                 logging.error(f"No se encontró el cliente con el RUT '{cliente_rut}'.")
                 return None
 
+            # Verificar disponibilidad de ingredientes
+            for menu in menus:
+                if not MenuCRUD.verificar_disponibilidad_menu(db, menu["id"]):
+                    logging.error(f"No hay suficientes ingredientes para el menú con ID '{menu['id']}'.")
+                    return None
+
+            # Descontar ingredientes necesarios
+            for menu in menus:
+                menu_obj = MenuCRUD.get_menu_by_id(db, menu["id"])
+                for ing_nombre, cantidad in menu_obj.ing_necesarios.items():
+                    ingrediente = db.query(Ingrediente).filter(Ingrediente.nombre == ing_nombre).first()
+                    if ingrediente:
+                        ingrediente.cantidad -= cantidad * menu["cantidad"]
+
             pedido = Pedido(descripcion=descripcion, total=total, fecha=fecha, cliente=cliente, menus=menus)
             db.add(pedido)
-            db.commit()
-
             db.commit()
             db.refresh(pedido)
             return pedido

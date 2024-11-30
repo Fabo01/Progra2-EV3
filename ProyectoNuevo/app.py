@@ -27,7 +27,7 @@ class MainApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("Gestión de Restaurante")
-        self.geometry("1000x700")
+        self.geometry("1300x700")
         self.configure(fg_color="#1c1c1c")  # Fondo oscuro
 
         # Menú lateral
