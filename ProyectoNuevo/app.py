@@ -130,22 +130,21 @@ class ClientePanel(ctk.CTkFrame):
         email = self.email_entry.get()
         nombre = self.nombre_entry.get()
         
-        if not nombre or not email:
+        if not nombre or not email or not rut:
             messagebox.showerror("Error", "Todos los campos son obligatorios.")
             return
 
         cliente_existente = ClienteCRUD.get_cliente_by_rut(self.db, rut)
-        if cliente_existente:
-            messagebox.showinfo("Error", f"El cliente con el rut'{rut}' ya existe.")
+        if (cliente_existente):
+            messagebox.showinfo("Error", f"El cliente con el rut '{rut}' ya existe.")
             return
         else:
             cliente = ClienteCRUD.create_cliente(self.db, rut, nombre, email)
-            if cliente:
+            if (cliente):
                 messagebox.showinfo("Éxito", f"Cliente '{nombre}' registrado con éxito.")
             else:
                 messagebox.showerror("Error", f"No se pudo registrar el cliente '{nombre}'.")
             self.refresh_list()
-        self.refresh_list()
 
     def open_edit_window(self):
         selected_item = self.cliente_list.selection()
@@ -191,9 +190,9 @@ class ClientePanel(ctk.CTkFrame):
             messagebox.showerror("Error", "Todos los campos son obligatorios para actualizar un cliente.")
             return
 
-        cliente = ClienteCRUD.update_cliente(self.db, cliente_rut, nombre, email, rut)
-        if cliente:
-            messagebox.showinfo("Éxito", f"Cliente n°rut:'{rut}' y Nombre:'{nombre}' actualizado con éxito.")
+        cliente = ClienteCRUD.update_cliente(self.db, rut, nombre, email)
+        if (cliente):
+            messagebox.showinfo("Éxito", f"Cliente n°rut:'{rut}' actualizado a: Nombre:'{nombre}'// Email:'{email}'")
             self.edit_window.destroy()
         else:
             messagebox.showerror("Error", f"No se pudo actualizar el cliente '{nombre}//{rut}'.")
@@ -208,9 +207,9 @@ class ClientePanel(ctk.CTkFrame):
         confirm = messagebox.askyesno("Confirmar Eliminación", f"¿Estás seguro de eliminar al cliente '{email_actual}'?")
         if confirm:
             cliente = ClienteCRUD.delete_cliente(self.db, email_actual)
-            if cliente:
+            if (cliente):
                 messagebox.showinfo("Éxito", f"Cliente '{email_actual}' eliminado con éxito.")
-        else:
+            else:
                 messagebox.showerror("Error", f"No se pudo eliminar el cliente '{email_actual}'.")
         self.refresh_list()
 
@@ -297,13 +296,13 @@ class IngredientePanel(ctk.CTkFrame):
             return
 
         ingrediente_existente = IngredienteCRUD.get_ingrediente_by_nombre(self.db, nombre)
-        if ingrediente_existente:
+        if (ingrediente_existente):
             messagebox.showerror("Error", f"El ingrediente '{nombre}' ya existe.")
             return
         try:
             cantidad = float(cantidad)
             ingrediente = IngredienteCRUD.create_ingrediente(self.db, nombre, tipo, cantidad, unidad)
-            if ingrediente:
+            if (ingrediente):
                 messagebox.showinfo("Éxito", f"Ingrediente '{nombre}' añadido con éxito.")
             else:
                 messagebox.showerror("Error", f"Error al registrar el ingrediente '{nombre}'.")
@@ -361,7 +360,7 @@ class IngredientePanel(ctk.CTkFrame):
         try:
             cantidad = float(cantidad)
             ingrediente = IngredienteCRUD.update_ingrediente(self.db, ingrediente_id, cantidad, tipo, unidad)
-            if ingrediente:
+            if (ingrediente):
                 messagebox.showinfo("Éxito", f"Ingrediente '{nombre}' actualizado con éxito.")
                 self.edit_window.destroy()
             else:
@@ -377,11 +376,11 @@ class IngredientePanel(ctk.CTkFrame):
             messagebox.showerror("Error", "Selecciona un ingrediente de la lista.")
             return
         
-        ingrediente_id = self.ingrediente_list.item(selected_item)["values"][0]  # Cambia el índice
-        confirm = messagebox.askyesno("Confirmar Eliminación", f"¿Estás seguro de eliminar el ingrediente '{ingrediente.nombre}'?")
+        ingrediente_id = self.ingrediente_list.item(selected_item)["values"][0]
+        confirm = messagebox.askyesno("Confirmar Eliminación", f"¿Estás seguro de eliminar el ingrediente '{ingrediente_id}'?")
         if confirm:
             ingrediente = IngredienteCRUD.delete_ingrediente(self.db, ingrediente_id)
-            if ingrediente:
+            if (ingrediente):
                 messagebox.showinfo("Éxito", "Ingrediente eliminado con éxito.")
             else:
                 messagebox.showerror("Error", "Error al eliminar el ingrediente.")
@@ -418,60 +417,159 @@ class MenuPanel(ctk.CTkFrame):
 
         self.nombre_entry = self.create_form_entry("Nombre del Menú", 1)
         self.descripcion_entry = self.create_form_entry("Descripción del Menú", 2)
+        self.precio_entry = self.create_form_entry("Precio del Menú", 3)
 
-        self.add_button = ctk.CTkButton(self, text="Registrar Menú", command=self.add_menu, corner_radius=10)
-        self.add_button.grid(row=3, column=0, pady=10)
+        self.ingredientes_frame = ctk.CTkFrame(self, fg_color="#2c2c2c", corner_radius=10)
+        self.ingredientes_frame.grid(row=4, column=0, pady=10, padx=10, sticky="ew")
+        self.ingredientes_label = ctk.CTkLabel(self.ingredientes_frame, text="Ingredientes", font=("Arial", 14))
+        self.ingredientes_label.grid(row=0, column=0, padx=10, pady=5)
 
-        self.update_button = ctk.CTkButton(self, text="Editar Menú", command=self.open_edit_window, corner_radius=10)
-        self.update_button.grid(row=4, column=0, pady=10)
+        self.ingredientes_combobox = ctk.CTkComboBox(self.ingredientes_frame, values=[], width=200, corner_radius=10)
+        self.ingredientes_combobox.grid(row=1, column=0, padx=10, pady=5)
 
-        self.delete_button = ctk.CTkButton(self, text="Eliminar Menú", command=self.delete_menu, corner_radius=10)
-        self.delete_button.grid(row=5, column=0, pady=10)
+        self.cantidad_entry = ctk.CTkEntry(self.ingredientes_frame, corner_radius=10, width=100)
+        self.cantidad_entry.grid(row=1, column=1, padx=10, pady=5)
 
-        # Lista de menús
+        self.add_ingrediente_button = ctk.CTkButton(self.ingredientes_frame, text="Añadir Ingrediente", command=self.add_ingrediente, corner_radius=10)
+        self.add_ingrediente_button.grid(row=1, column=2, padx=10, pady=5)
+
+        self.update_ingrediente_button = ctk.CTkButton(self.ingredientes_frame, text="Actualizar Ingrediente", command=self.update_ingrediente, corner_radius=10)
+        self.update_ingrediente_button.grid(row=1, column=3, padx=10, pady=5)
+
+        self.delete_ingrediente_button = ctk.CTkButton(self.ingredientes_frame, text="Eliminar Ingrediente", command=self.delete_ingrediente, corner_radius=10)
+        self.delete_ingrediente_button.grid(row=1, column=4, padx=10, pady=5)
+
+        self.ingredientes_list = self.create_treeview_ingredientes()
+        self.ingredientes_list.grid(row=2, column=0, columnspan=5, pady=10, sticky="nsew")
+
+        self.button_frame = ctk.CTkFrame(self, fg_color="#1c1c1c")
+        self.button_frame.grid(row=5, column=0, pady=10, sticky="ew")
+
+        self.add_button = ctk.CTkButton(self.button_frame, text="Registrar Menú", command=self.add_menu, corner_radius=10)
+        self.add_button.grid(row=0, column=0, padx=5)
+
+        self.update_button = ctk.CTkButton(self.button_frame, text="Editar Menú", command=self.open_edit_window, corner_radius=10)
+        self.update_button.grid(row=0, column=1, padx=5)
+
+        self.delete_button = ctk.CTkButton(self.button_frame, text="Eliminar Menú", command=self.delete_menu, corner_radius=10)
+        self.delete_button.grid(row=0, column=2, padx=5)
+
         self.menu_list = self.create_treeview(Menu)
         self.menu_list.grid(row=6, column=0, pady=20, sticky="nsew")
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(6, weight=1)
         self.refresh_list()
+        self.load_ingredientes()
 
     def create_treeview(self, model_class):
-        columns = [column.name for column in model_class.__table__.columns if column.name != 'id']
+        columns = [column.name for column in model_class.__table__.columns if column.name not in ['id']]
         treeview = ttk.Treeview(self, columns=columns, show="headings")
         for column in columns:
             treeview.heading(column, text=column.capitalize())
         return treeview
 
-    def create_form_entry(self, label_text, row):
-        frame = ctk.CTkFrame(self, fg_color="#2c2c2c", corner_radius=10)
-        frame.grid(row=row, column=0, pady=10, padx=10, sticky="ew")
+    def create_treeview_ingredientes(self):
+        columns = ["Ingrediente", "Cantidad"]
+        treeview = ttk.Treeview(self.ingredientes_frame, columns=columns, show="headings")
+        for column in columns:
+            treeview.heading(column, text=column)
+        return treeview
 
-        label = ctk.CTkLabel(frame, text=label_text, font=("Arial", 14))
-        label.pack(side="left", padx=10)
+    def load_ingredientes(self):
+        ingredientes = IngredienteCRUD.get_ingredientes(self.db)
+        ingrediente_names = [ingrediente.nombre for ingrediente in ingredientes]
+        self.ingredientes_combobox.configure(values=ingrediente_names)
+        self.ingredientes_combobox.set("Por favor selecciona un ingrediente")
 
-        entry = ctk.CTkEntry(frame, corner_radius=10)
-        entry.pack(side="right", fill="x", expand=True, padx=10)
+    def add_ingrediente(self):
+        ingrediente = self.ingredientes_combobox.get()
+        cantidad = self.cantidad_entry.get()
 
-        return entry
+        if not ingrediente or not cantidad:
+            messagebox.showerror("Error", "Selecciona un ingrediente y especifica la cantidad.")
+            return
+
+        try:
+            cantidad = float(cantidad)
+            if cantidad <= 0:
+                messagebox.showerror("Error", "La cantidad debe ser mayor que cero.")
+                return
+        except ValueError:
+            messagebox.showerror("Error", "La cantidad debe ser un número.")
+            return
+
+        self.ingredientes_list.insert("", "end", values=(ingrediente, cantidad))
+        self.cantidad_entry.delete(0, "end")
+
+    def update_ingrediente(self):
+        selected_item = self.ingredientes_list.selection()
+        if not selected_item:
+            messagebox.showerror("Error", "Selecciona un ingrediente de la lista.")
+            return
+
+        ingrediente = self.ingredientes_combobox.get()
+        cantidad = self.cantidad_entry.get()
+
+        if not ingrediente or not cantidad:
+            messagebox.showerror("Error", "Selecciona un ingrediente y especifica la cantidad.")
+            return
+
+        try:
+            cantidad = float(cantidad)
+            if cantidad <= 0:
+                messagebox.showerror("Error", "La cantidad debe ser mayor que cero.")
+                return
+        except ValueError:
+            messagebox.showerror("Error", "La cantidad debe ser un número.")
+            return
+
+        self.ingredientes_list.item(selected_item, values=(ingrediente, cantidad))
+        self.cantidad_entry.delete(0, "end")
+
+    def delete_ingrediente(self):
+        selected_item = self.ingredientes_list.selection()
+        if not selected_item:
+            messagebox.showerror("Error", "Selecciona un ingrediente de la lista.")
+            return
+
+        self.ingredientes_list.delete(selected_item)
+
+    def get_ingredientes_from_list(self):
+        ingredientes = []
+        for item in self.ingredientes_list.get_children():
+            ingrediente, cantidad = self.ingredientes_list.item(item, "values")
+            ingrediente_obj = IngredienteCRUD.get_ingrediente_by_nombre(self.db, ingrediente)
+            if ingrediente_obj:
+                ingredientes.append({"id": ingrediente_obj.id, "cantidad": float(cantidad)})
+        return ingredientes
 
     def add_menu(self):
         nombre = self.nombre_entry.get()
         descripcion = self.descripcion_entry.get()
+        precio = self.precio_entry.get()
 
-        if not nombre or not descripcion:
+        if not nombre or not descripcion or not precio:
             messagebox.showerror("Error", "Todos los campos son obligatorios.")
             return
 
+        try:
+            precio = float(precio)
+            if precio <= 0:
+                messagebox.showerror("Error", "El precio debe ser un número positivo.")
+                return
+        except ValueError:
+            messagebox.showerror("Error", "El precio debe ser un número.")
+            return
+
         menu_existente = MenuCRUD.get_menu_by_nombre(self.db, nombre)
-        if menu_existente:
+        if (menu_existente):
             messagebox.showerror("Error", f"El menú '{nombre}' ya existe.")
             return
-            
 
-        ingredientes = []  # Asocia aquí los ingredientes que se desean al menú
+        ingredientes = self.get_ingredientes_from_list()
 
-        menu = MenuCRUD.create_menu(self.db, nombre, descripcion, ingredientes)
-        if menu:
+        menu = MenuCRUD.create_menu(self.db, nombre, descripcion, precio, ingredientes)
+        if (menu):
             messagebox.showinfo("Éxito", f"Menú '{nombre}' registrado con éxito.")
         else:
             messagebox.showerror("Error", f"Error al registrar el menú '{nombre}'.")
@@ -483,20 +581,50 @@ class MenuPanel(ctk.CTkFrame):
             messagebox.showerror("Error", "Selecciona un menú de la lista.")
             return
 
-        menu_nombre = self.menu_list.item(selected_item)["values"][0]
-        menu = MenuCRUD.get_menu_by_nombre(self.db, menu_nombre)
+        menu_id = self.menu_list.item(selected_item)["values"][0]
+        menu = MenuCRUD.get_menu_by_nombre(self.db, menu_id)
 
         if menu:
             self.edit_window = ctk.CTkToplevel(self)
             self.edit_window.title("Editar Menú")
-            self.edit_window.geometry("400x300")
+            self.edit_window.geometry("400x400")
             self.edit_window.configure(fg_color="#1c1c1c")
 
             self.edit_nombre_entry = self.create_form_entry_in_window("Nombre del Menú", 1, menu.nombre)
             self.edit_descripcion_entry = self.create_form_entry_in_window("Descripción del Menú", 2, menu.descripcion)
+            self.edit_precio_entry = self.create_form_entry_in_window("Precio del Menú", 3, menu.precio)
+
+            self.edit_ingredientes_frame = ctk.CTkFrame(self.edit_window, fg_color="#2c2c2c", corner_radius=10)
+            self.edit_ingredientes_frame.grid(row=4, column=0, pady=10, padx=10, sticky="ew")
+
+            self.edit_ingredientes_label = ctk.CTkLabel(self.edit_ingredientes_frame, text="Ingredientes", font=("Arial", 14))
+            self.edit_ingredientes_label.grid(row=0, column=0, padx=10, pady=5)
+
+            self.edit_ingredientes_combobox = ctk.CTkComboBox(self.edit_ingredientes_frame, values=[], width=200, corner_radius=10)
+            self.edit_ingredientes_combobox.grid(row=1, column=0, padx=10, pady=5)
+
+            self.edit_cantidad_entry = ctk.CTkEntry(self.edit_ingredientes_frame, corner_radius=10, width=100)
+            self.edit_cantidad_entry.grid(row=1, column=1, padx=10, pady=5)
+
+            self.edit_add_ingrediente_button = ctk.CTkButton(self.edit_ingredientes_frame, text="Añadir Ingrediente", command=self.edit_add_ingrediente, corner_radius=10)
+            self.edit_add_ingrediente_button.grid(row=1, column=2, padx=10, pady=5)
+
+            self.edit_update_ingrediente_button = ctk.CTkButton(self.edit_ingredientes_frame, text="Actualizar Ingrediente", command=self.edit_update_ingrediente, corner_radius=10)
+            self.edit_update_ingrediente_button.grid(row=1, column=3, padx=10, pady=5)
+
+            self.edit_delete_ingrediente_button = ctk.CTkButton(self.edit_ingredientes_frame, text="Eliminar Ingrediente", command=self.edit_delete_ingrediente, corner_radius=10)
+            self.edit_delete_ingrediente_button.grid(row=1, column=4, padx=10, pady=5)
+
+            self.edit_ingredientes_list = self.create_treeview_ingredientes()
+            self.edit_ingredientes_list.grid(row=2, column=0, columnspan=5, pady=10, sticky="nsew")
+
+            for ingrediente in menu.ingredientes:
+                self.edit_ingredientes_list.insert("", "end", values=(ingrediente.ingrediente.nombre, ingrediente.cantidad))
 
             self.save_button = ctk.CTkButton(self.edit_window, text="Guardar Cambios", command=lambda: self.update_menu(menu.id), corner_radius=10)
             self.save_button.grid(row=5, column=0, pady=10)
+
+            self.load_ingredientes()
 
     def create_form_entry_in_window(self, label_text, row, value):
         frame = ctk.CTkFrame(self.edit_window, fg_color="#2c2c2c", corner_radius=10)
@@ -510,19 +638,91 @@ class MenuPanel(ctk.CTkFrame):
         entry.pack(side="right", fill="x", expand=True, padx=10)
 
         return entry
-    
+
+    def edit_add_ingrediente(self):
+        ingrediente = self.edit_ingredientes_combobox.get()
+        cantidad = self.edit_cantidad_entry.get()
+
+        if not ingrediente or not cantidad:
+            messagebox.showerror("Error", "Selecciona un ingrediente y especifica la cantidad.")
+            return
+
+        try:
+            cantidad = float(cantidad)
+            if cantidad <= 0:
+                messagebox.showerror("Error", "La cantidad debe ser mayor que cero.")
+                return
+        except ValueError:
+            messagebox.showerror("Error", "La cantidad debe ser un número.")
+            return
+
+        self.edit_ingredientes_list.insert("", "end", values=(ingrediente, cantidad))
+        self.edit_cantidad_entry.delete(0, "end")
+
+    def edit_update_ingrediente(self):
+        selected_item = self.edit_ingredientes_list.selection()
+        if not selected_item:
+            messagebox.showerror("Error", "Selecciona un ingrediente de la lista.")
+            return
+
+        ingrediente = self.edit_ingredientes_combobox.get()
+        cantidad = self.edit_cantidad_entry.get()
+
+        if not ingrediente or not cantidad:
+            messagebox.showerror("Error", "Selecciona un ingrediente y especifica la cantidad.")
+            return
+
+        try:
+            cantidad = float(cantidad)
+            if cantidad <= 0:
+                messagebox.showerror("Error", "La cantidad debe ser mayor que cero.")
+                return
+        except ValueError:
+            messagebox.showerror("Error", "La cantidad debe ser un número.")
+            return
+
+        self.edit_ingredientes_list.item(selected_item, values=(ingrediente, cantidad))
+        self.edit_cantidad_entry.delete(0, "end")
+
+    def edit_delete_ingrediente(self):
+        selected_item = self.edit_ingredientes_list.selection()
+        if not selected_item:
+            messagebox.showerror("Error", "Selecciona un ingrediente de la lista.")
+            return
+
+        self.edit_ingredientes_list.delete(selected_item)
+
+    def get_ingredientes_from_edit_list(self):
+        ingredientes = []
+        for item in self.edit_ingredientes_list.get_children():
+            ingrediente, cantidad = self.edit_ingredientes_list.item(item, "values")
+            ingrediente_obj = IngredienteCRUD.get_ingrediente_by_nombre(self.db, ingrediente)
+            if ingrediente_obj:
+                ingredientes.append({"id": ingrediente_obj.id, "cantidad": float(cantidad)})
+        return ingredientes
+
     def update_menu(self, menu_id):
         nombre = self.edit_nombre_entry.get()
         descripcion = self.edit_descripcion_entry.get()
+        precio = self.edit_precio_entry.get()
 
-        if not nombre or not descripcion:
+        if not nombre or not descripcion or not precio:
             messagebox.showerror("Error", "Todos los campos son obligatorios.")
             return
 
-        ingredientes = []  # Asocia aquí los ingredientes que se desean al menú
+        try:
+            precio = float(precio)
+            if precio <= 0:
+                messagebox.showerror("Error", "El precio debe ser un número positivo.")
+                return
+        except ValueError:
+            messagebox.showerror("Error", "El precio debe ser un número.")
+            return
 
-        menu = MenuCRUD.update_menu(self.db, menu_id, nombre, descripcion, ingredientes)
-        if menu:
+        ingredientes = self.get_ingredientes_from_edit_list()
+
+        menu = MenuCRUD.update_menu(self.db, menu_id, nombre, descripcion, precio, ingredientes)
+        if (menu):
             messagebox.showinfo("Éxito", f"Menú '{nombre}' actualizado con éxito.")
             self.edit_window.destroy()
         else:
@@ -539,7 +739,7 @@ class MenuPanel(ctk.CTkFrame):
         confirm = messagebox.askyesno("Confirmar Eliminación", f"¿Estás seguro de eliminar el menú '{menu_id}'?")
         if confirm:
             menu = MenuCRUD.delete_menu(self.db, menu_id)
-            if menu:
+            if (menu):
                 messagebox.showinfo("Éxito", f"Menú eliminado con éxito.")
             else:
                 messagebox.showerror("Error", f"Error al eliminar el menú.")
@@ -548,9 +748,9 @@ class MenuPanel(ctk.CTkFrame):
     def refresh_list(self):
         for item in self.menu_list.get_children():
             self.menu_list.delete(item)
-        menus = MenuCRUD.get_menus(self.db)  # Llama al método get_menus para obtener los menús
+        menus = MenuCRUD.get_menus(self.db)
         for menu in menus:
-            self.menu_list.insert("", "end", values=(menu.nombre, menu.descripcion))
+            self.menu_list.insert("", "end", values=(menu.nombre, menu.descripcion, menu.precio))
 
     def on_select(self, event):
         selected_item = self.menu_list.selection()
@@ -560,6 +760,20 @@ class MenuPanel(ctk.CTkFrame):
             self.nombre_entry.insert(0, values[0])
             self.descripcion_entry.delete(0, tk.END)
             self.descripcion_entry.insert(0, values[1])
+            self.precio_entry.delete(0, tk.END)
+            self.precio_entry.insert(0, values[2])
+
+    def create_form_entry(self, label_text, row):
+        frame = ctk.CTkFrame(self, fg_color="#2c2c2c", corner_radius=10)
+        frame.grid(row=row, column=0, pady=10, padx=10, sticky="ew")
+
+        label = ctk.CTkLabel(frame, text=label_text, font=("Arial", 14))
+        label.pack(side="left", padx=10)
+
+        entry = ctk.CTkEntry(frame, corner_radius=10)
+        entry.pack(side="right", fill="x", expand=True, padx=10)
+
+        return entry
 
 class PanelCompra(ctk.CTkFrame):
     def __init__(self, parent, db):
@@ -580,17 +794,13 @@ class PanelCompra(ctk.CTkFrame):
         self.menu_combobox.set("Selecciona un menú")  # Texto por defecto
         self.menu_combobox.grid(row=0, column=0, padx=10)
 
-        # Botón para cargar los menús en el Combobox
-        self.load_menus_button = ctk.CTkButton(self.entry_frame, text="Cargar Menús", command=self.load_menus, corner_radius=10)
-        self.load_menus_button.grid(row=0, column=1, padx=10)
-
         # Entrada de cantidad
-        self.cantidad_entry = self.create_form_entry("Cantidad", 0, 2)
-        self.cantidad_entry.grid(row=0, column=2, padx=10)
+        self.cantidad_entry = self.create_form_entry("Cantidad", 0, 1)  # Adjust column index
+        self.cantidad_entry.grid(row=0, column=1, padx=10)
 
         # Botón para agregar al carrito
         self.add_button = ctk.CTkButton(self.entry_frame, text="Agregar al carrito", command=self.add_to_cart, corner_radius=10)
-        self.add_button.grid(row=0, column=3, padx=10)
+        self.add_button.grid(row=0, column=2, padx=10)  # Adjust column index
 
         # Lista de productos en el carrito
         self.cart_list = self.create_treeview()
@@ -609,16 +819,20 @@ class PanelCompra(ctk.CTkFrame):
 
         self.cliente_combobox = ctk.CTkComboBox(self.entry_frame, values=[], width=300, corner_radius=10)
         self.cliente_combobox.set("Selecciona un cliente")  # Texto por defecto
-        self.cliente_combobox.grid(row=0, column=4, padx=10)
+        self.cliente_combobox.grid(row=0, column=3, padx=10)  # Adjust column index
+
+        self.load_clientes()  # Ensure clients are loaded into the combobox
+        self.load_menus()  # Ensure menus are loaded into the combobox
+
     def create_form_entry(self, label_text, row, column):
         frame = ctk.CTkFrame(self.entry_frame, fg_color="#2c2c2c", corner_radius=10)
         frame.grid(row=row, column=column, pady=10, padx=10, sticky="ew")
 
         label = ctk.CTkLabel(frame, text=label_text, font=("Arial", 14), text_color="white")
-        label.pack(side="left", padx=10)
+        label.grid(row=0, column=0, padx=10)
 
         entry = ctk.CTkEntry(frame, corner_radius=10)
-        entry.pack(side="right", fill="x", expand=True, padx=10)
+        entry.grid(row=0, column=1, padx=10)
 
         return entry
 
@@ -628,15 +842,14 @@ class PanelCompra(ctk.CTkFrame):
         for column in columns:
             treeview.heading(column, text=column)
         return treeview
+
     def load_menus(self):
         # Cargar los menús desde la Base de datos
         menus = MenuCRUD.get_menus(self.db)
         menu_names = [menu.nombre for menu in menus]
-        
         if not menu_names:
             messagebox.showinfo("Sin menús", "No hay menús disponibles en el sistema.")
             return
-
         # Actualizar el combobox con los menús cargados
         self.menu_combobox.configure(values=menu_names)
 
@@ -729,7 +942,9 @@ class PanelCompra(ctk.CTkFrame):
         # Puedes calcular el precio total del menú sumando el precio de los ingredientes
         precio_total = 0
         for item in menu.ingredientes:
-            precio_total += item.ingrediente.precio * item.cantidad
+            ingrediente = IngredienteCRUD.get_ingrediente_by_id(self.db, item.ingrediente_id)
+            if ingrediente:
+                precio_total += ingrediente.cantidad * item.cantidad
         return precio_total
 
 class PanelPedido(ctk.CTkFrame):
@@ -786,7 +1001,7 @@ class PanelPedido(ctk.CTkFrame):
         nuevo_pedido = self.open_pedido_form()
         if nuevo_pedido:
             try:
-                PedidoCRUD.agregar_pedido(self.db, nuevo_pedido)
+                PedidoCRUD.crear_pedido(self.db, nuevo_pedido)
                 self.refresh_list()
                 self.show_message("Pedido agregado exitosamente.")
             except Exception as e:
@@ -800,7 +1015,7 @@ class PanelPedido(ctk.CTkFrame):
             pedido_actualizado = self.open_pedido_form(pedido)
             if pedido_actualizado:
                 try:
-                    PedidoCRUD.editar_pedido(self.db, pedido_actualizado)
+                    PedidoCRUD.actualizar_pedido(self.db, pedido_actualizado)
                     self.refresh_list()
                     self.show_message("Pedido editado exitosamente.")
                 except Exception as e:
@@ -811,7 +1026,7 @@ class PanelPedido(ctk.CTkFrame):
         if selected_item:
             pedido_id = self.pedido_list.item(selected_item)['values'][0]
             try:
-                PedidoCRUD.eliminar_pedido(self.db, pedido_id)
+                PedidoCRUD.borrar_pedido(self.db, pedido_id)
                 self.refresh_list()
                 self.show_message("Pedido eliminado exitosamente.")
             except Exception as e:
@@ -866,11 +1081,11 @@ class GraficosPanel(ctk.CTkFrame):
         """Genera el gráfico basado en la selección del ComboBox"""
         tipo = self.tipo_grafico.get()
         
-        if tipo == "Ventas por Fecha":
+        if (tipo == "Ventas por Fecha"):
             self.graficar_ventas_por_fecha()
-        elif tipo == "Menús más Comprados":
+        elif (tipo == "Menús más Comprados"):
             self.graficar_menus_mas_comprados()
-        elif tipo == "Uso de Ingredientes":
+        elif (tipo == "Uso de Ingredientes"):
             self.graficar_uso_ingredientes()
         else:
             CTkM(title="Error", message="Seleccione un tipo de gráfico válido.", icon="cancel")

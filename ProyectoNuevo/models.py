@@ -16,12 +16,14 @@ class Ingrediente(Base):
     tipo = Column(String, nullable=False)
     cantidad = Column(Float, nullable=False)
     unidad = Column(String, nullable=False)
+    menu_ingredientes = relationship("MenuIngrediente", back_populates="ingrediente")
 
 class Menu(Base):
     __tablename__ = "menus"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     nombre = Column(String, nullable=False, unique=True)
     descripcion = Column(Text, nullable=True)
+    precio = Column(Float, nullable=False)  # New attribute to store the price of the menu
     ing_necesarios = Column(JSON, nullable=False)  # Dictionary to store ingredient name and quantity
     ingredientes = relationship("MenuIngrediente", back_populates="menu")
 
@@ -32,7 +34,7 @@ class MenuIngrediente(Base):
     ingrediente_id = Column(Integer, ForeignKey("ingredientes.id"), nullable=False)
     cantidad = Column(Float, nullable=False)
     menu = relationship("Menu", back_populates="ingredientes")
-    ingrediente = relationship("Ingrediente")
+    ingrediente = relationship("Ingrediente", back_populates="menu_ingredientes")
 
 class Pedido(Base):
     __tablename__ = "pedidos"

@@ -13,7 +13,7 @@ cliente = ClienteCRUD.create_cliente(db, nombre="Juan Pérez", email="juan@examp
 ingrediente = IngredienteCRUD.create_ingrediente(db, nombre="Tomate", tipo="Vegetal", cantidad=10, unidad="kg")
 
 # Crear menú
-menu = MenuCRUD.create_menu(db, nombre="Ensalada Mixta", descripcion="Deliciosa ensalada con tomate y lechuga", ingredientes=[{"id": ingrediente.id, "cantidad": 2}])
+menu = MenuCRUD.create_menu(db, nombre="Ensalada Mixta", descripcion="Deliciosa ensalada con tomate y lechuga", precio=10.0, ingredientes=[{"id": ingrediente.id, "cantidad": 2}])
 
 # Crear pedido
 pedido = PedidoCRUD.create_pedido(db, descripcion="Pedido de ensalada", total=100, fecha="2024-11-26", cliente_id=cliente.email)

@@ -2,10 +2,11 @@ import logging
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from models import Menu, MenuIngrediente, Ingrediente
+
 class MenuCRUD:
 
     @staticmethod
-    def create_menu(db: Session, nombre: str, descripcion: str, ingredientes: list):
+    def create_menu(db: Session, nombre: str, descripcion: str, precio: float, ingredientes: list):
         try:
             ing_necesarios = {}
             for ingrediente in ingredientes:
@@ -18,7 +19,7 @@ class MenuCRUD:
                     return None
                 ing_necesarios[ingrediente_existente.nombre] = ingrediente["cantidad"]
 
-            menu = Menu(nombre=nombre, descripcion=descripcion, ing_necesarios=ing_necesarios)
+            menu = Menu(nombre=nombre, descripcion=descripcion, precio=precio, ing_necesarios=ing_necesarios)
             db.add(menu)
             db.commit()
 
@@ -49,7 +50,15 @@ class MenuCRUD:
             return []
 
     @staticmethod
-    def update_menu(db: Session, menu_id: int, nuevo_nombre: str = None, nueva_descripcion: str = None, nuevos_ingredientes: list = None):
+    def get_menu_by_nombre(db: Session, nombre: str):
+        try:
+            return db.query(Menu).filter(Menu.nombre == nombre).first()
+        except SQLAlchemyError as e:
+            logging.error(f"Error al buscar menú por nombre '{nombre}': {e}")
+            return None
+
+    @staticmethod
+    def update_menu(db: Session, menu_id: int, nuevo_nombre: str = None, nueva_descripcion: str = None, nuevo_precio: float = None, nuevos_ingredientes: list = None):
         try:
             menu = db.query(Menu).get(menu_id)
             if not menu:
@@ -60,6 +69,8 @@ class MenuCRUD:
                 menu.nombre = nuevo_nombre
             if nueva_descripcion:
                 menu.descripcion = nueva_descripcion
+            if nuevo_precio is not None:
+                menu.precio = nuevo_precio
 
             if nuevos_ingredientes is not None:
                 db.query(MenuIngrediente).filter_by(menu_id=menu_id).delete()
@@ -97,3 +108,23 @@ class MenuCRUD:
             db.rollback()
             logging.error(f"Error al eliminar menú: {e}")
             return None
+
+    @staticmethod
+    def verificar_disponibilidad_menu(db: Session, menu_id: int):
+        try:
+            menu = db.query(Menu).get(menu_id)
+            if not menu:
+                logging.error(f"No se encontró el menú con el ID '{menu_id}'.")
+                return False
+
+            for ingrediente_nombre, cantidad_necesaria in menu.ing_necesarios.items():
+                ingrediente = db.query(Ingrediente).filter(Ingrediente.nombre == ingrediente_nombre).first()
+                if not ingrediente or ingrediente.cantidad < cantidad_necesaria:
+                    logging.error(f"No hay suficiente cantidad del ingrediente '{ingrediente_nombre}'.")
+                    return False
+
+            return True
+
+        except SQLAlchemyError as e:
+            logging.error(f"Error al verificar disponibilidad del menú: {e}")
+            return False

@@ -40,11 +40,11 @@ class ClienteCRUD:
             return None
 
     @staticmethod
-    def update_cliente(db: Session, email_actual: str, nuevo_nombre: str, nuevo_email: str):
+    def update_cliente(db: Session, rut: str, nuevo_nombre: str, nuevo_email: str):
         try:
-            cliente = db.query(Cliente).filter_by(email=email_actual).first()
+            cliente = db.query(Cliente).filter_by(rut=rut).first()
             if not cliente:
-                logging.error(f"No se encontró el cliente con el email '{email_actual}'.")
+                logging.error(f"No se encontró el cliente con el rut '{rut}'.")
                 return None
 
             cliente.nombre = nuevo_nombre
