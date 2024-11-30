@@ -1,7 +1,7 @@
 import logging
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from models import Pedido, Cliente, Ingrediente
+from models import Pedido, Cliente, Ingrediente, Menu
 from crud.menu_crud import MenuCRUD
 
 class PedidoCRUD:
@@ -66,10 +66,27 @@ class PedidoCRUD:
             return None
 
     @staticmethod
+    def get_ingredientes_usados(db: Session, pedido: Pedido):
+        ingredientes_usados = {}
+        for menu in pedido.menus:
+            menu_obj = db.query(Menu).filter(Menu.id == menu["id"]).first()
+            for ing_nombre, cantidad in menu_obj.ing_necesarios.items():
+                if ing_nombre in ingredientes_usados:
+                    ingredientes_usados[ing_nombre] += cantidad * menu["cantidad"]
+                else:
+                    ingredientes_usados[ing_nombre] = cantidad * menu["cantidad"]
+        return ingredientes_usados
+
+    @staticmethod
     def borrar_pedido(db: Session, pedido_id: int):
         try:
             pedido = db.query(Pedido).get(pedido_id)
             if pedido:
+                ingredientes_usados = PedidoCRUD.get_ingredientes_usados(db, pedido)
+                for ing_nombre, cantidad in ingredientes_usados.items():
+                    ingrediente = db.query(Ingrediente).filter(Ingrediente.nombre == ing_nombre).first()
+                    if ingrediente:
+                        ingrediente.cantidad += cantidad
                 db.delete(pedido)
                 db.commit()
                 return pedido

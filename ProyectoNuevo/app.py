@@ -1026,6 +1026,9 @@ class PanelPedido(ctk.CTkFrame):
         self.pedido_list = self.create_treeview(Pedido)
         self.pedido_list.grid(row=1, column=0, pady=20, sticky="nsew", columnspan=3)
 
+
+        
+
         # Botones para agregar, editar y eliminar pedidos
         self.btn_frame = ctk.CTkFrame(self)
         self.btn_frame.grid(row=3, column=0, pady=5, columnspan=3)
@@ -1143,7 +1146,8 @@ class PanelPedido(ctk.CTkFrame):
             CTkM.showerror("Error", f"Error al actualizar descripción: {e}")
 
     def show_message(self, message):
-        CTkM.showinfo("Información", message) 
+        # Método para mostrar mensajes de confirmación o error
+        messagebox.showinfo("Información", message)
 
 class GraficosPanel(ctk.CTkFrame):
     def __init__(self, parent, db):
@@ -1278,4 +1282,4 @@ class Generarboleta:
 
 if __name__ == "__main__":
     app = MainApp()
-    app.mainloop() 
+    app.mainloop()

@@ -16,4 +16,4 @@ ingrediente = IngredienteCRUD.create_ingrediente(db, nombre="Tomate", tipo="Vege
 menu = MenuCRUD.create_menu(db, nombre="Ensalada Mixta", descripcion="Deliciosa ensalada con tomate y lechuga", precio=10.0, ingredientes=[{"id": ingrediente.id, "cantidad": 2}])
 
 # Crear pedido
-pedido = PedidoCRUD.create_pedido(db, descripcion="Pedido de ensalada", total=100, fecha="2024-11-26", cliente_id=cliente.email)
+pedido = PedidoCRUD.crear_pedido(db, descripcion="Pedido de ensalada", total=100, fecha="2024-11-26", cliente_rut=cliente.rut, menus=[{"id": menu.id, "cantidad": 1}])
