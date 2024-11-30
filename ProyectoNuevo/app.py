@@ -1159,15 +1159,7 @@ class PanelPedido(ctk.CTkFrame):
             menus = ", ".join([f"{menu['cantidad']}x {MenuCRUD.get_menu_by_id(self.db, menu['id']).nombre}" for menu in pedido.menus])
             self.pedido_list.insert("", "end", values=(pedido.id, pedido.descripcion, pedido.total, pedido.fecha, pedido.cliente_rut, menus))
 
-    def add_pedido(self):
-        nuevo_pedido = self.open_pedido_form()
-        if nuevo_pedido:
-            try:
-                PedidoCRUD.crear_pedido(self.db, nuevo_pedido)
-                self.refresh_list()
-                self.show_message("Pedido agregado exitosamente.")
-            except Exception as e:
-                self.show_message(f"Error al agregar pedido: {e}")
+
 
     def edit_pedido(self):
         selected_item = self.pedido_list.selection()
