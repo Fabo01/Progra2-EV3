@@ -43,20 +43,20 @@ class MainApp(ctk.CTk):
         self.app_title.grid(row=0, column=0, pady=20)
 
         # Botones de navegación
-        self.create_menu_button("Clientes", ClientePanel, 1)
-        self.create_menu_button("Ingredientes", IngredientePanel, 2)
-        self.create_menu_button("Menu", MenuPanel, 3)
-        self.create_menu_button("Panel de compra", PanelCompra, 4)
-        self.create_menu_button("Pedidos", PanelPedido, 5)
-        self.create_menu_button("Graficos", GraficosPanel, 6)
+        self.create_menu_button("Clientes", "ClientePanel", 1)
+        self.create_menu_button("Ingredientes", "IngredientePanel", 2)
+        self.create_menu_button("Menu", "MenuPanel", 3)
+        self.create_menu_button("Panel de compra", "PanelCompra", 4)
+        self.create_menu_button("Pedidos", "PanelPedido", 5)
+        self.create_menu_button("Graficos", "GraficosPanel", 6)
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
 
-    def create_menu_button(self, text, panel_class, row):
+    def create_menu_button(self, text, panel_name, row):
         button = ctk.CTkButton(
             self.menu_frame,
             text=text,
-            command=lambda: self.load_panel(panel_class),
+            command=lambda: self.load_panel(panel_name),
             font=("Arial", 16, "bold"),
             corner_radius=10,
             height=40,
@@ -65,16 +65,34 @@ class MainApp(ctk.CTk):
         )
         button.grid(row=row, column=0, pady=15, padx=10, sticky="ew")
 
-    def load_panel(self, panel_class):
+    def load_panel(self, panel_name):
         for widget in self.main_frame.winfo_children():
             widget.destroy()
         db_session = next(get_db())
-        panel = panel_class(self.main_frame, db_session)
+        panel = PanelFactory.create_panel(panel_name, self.main_frame, db_session)
         panel.grid(row=0, column=0, sticky="nsew")
         self.main_frame.grid_columnconfigure(0, weight=1)
         self.main_frame.grid_rowconfigure(0, weight=1)
         if hasattr(panel, 'refresh_list'):
             panel.refresh_list()
+
+class PanelFactory:  ## utilizacion de factory method para crear los paneles de la aplicacion de manera dinamica 
+    @staticmethod
+    def create_panel(panel_name, parent, db):
+        if panel_name == "ClientePanel":
+            return ClientePanel(parent, db)
+        elif panel_name == "IngredientePanel":
+            return IngredientePanel(parent, db)
+        elif panel_name == "MenuPanel":
+            return MenuPanel(parent, db)
+        elif panel_name == "PanelCompra":
+            return PanelCompra(parent, db)
+        elif panel_name == "PanelPedido":
+            return PanelPedido(parent, db)
+        elif panel_name == "GraficosPanel":
+            return GraficosPanel(parent, db)
+        else:
+            raise ValueError(f"Panel '{panel_name}' no reconocido")
 
 class ClientePanel(ctk.CTkFrame):
     def __init__(self, parent, db):
@@ -1022,12 +1040,23 @@ class PanelPedido(ctk.CTkFrame):
         self.label_title = ctk.CTkLabel(self, text="Panel de Pedidos", font=("Arial", 24, "bold"), text_color="white")
         self.label_title.grid(row=0, column=0, pady=20, columnspan=3)
 
+        # Filtros
+        self.filter_frame = ctk.CTkFrame(self, fg_color="#2c2c2c", corner_radius=10)
+        self.filter_frame.grid(row=1, column=0, pady=10, padx=10, sticky="ew", columnspan=3)
+
+        self.cliente_filter = self.create_filter_combobox("Filtrar por Cliente (RUT)", 0)
+        self.fecha_filter = self.create_filter_entry("Filtrar por Fecha (YYYY-MM-DD)", 1)
+        self.monto_filter = self.create_filter_entry("Filtrar por Monto Mayor a", 2)
+
+        self.apply_filter_button = ctk.CTkButton(self.filter_frame, text="Aplicar Filtros", command=self.apply_filters, corner_radius=10)
+        self.apply_filter_button.grid(row=0, column=3, padx=10)
+
+        self.clear_filter_button = ctk.CTkButton(self.filter_frame, text="Limpiar Filtros", command=self.clear_filters, corner_radius=10)
+        self.clear_filter_button.grid(row=0, column=4, padx=10)
+
         # Treeview para mostrar los pedidos
         self.pedido_list = self.create_treeview(Pedido)
-        self.pedido_list.grid(row=1, column=0, pady=20, sticky="nsew", columnspan=3)
-
-
-        
+        self.pedido_list.grid(row=2, column=0, pady=20, sticky="nsew", columnspan=3)
 
         # Botones para agregar, editar y eliminar pedidos
         self.btn_frame = ctk.CTkFrame(self)
@@ -1042,6 +1071,7 @@ class PanelPedido(ctk.CTkFrame):
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(5, weight=1)
 
+        self.load_clientes()
         self.refresh_list()
 
     def create_treeview(self, model_class):
@@ -1052,10 +1082,79 @@ class PanelPedido(ctk.CTkFrame):
             treeview.column(column, anchor='center')  # Centrar el texto
         return treeview
 
-    def refresh_list(self):
+    def create_filter_entry(self, label_text, column):
+        frame = ctk.CTkFrame(self.filter_frame, fg_color="#2c2c2c", corner_radius=10)
+        frame.grid(row=0, column=column, pady=5, padx=10, sticky="ew")
+
+        label = ctk.CTkLabel(frame, text=label_text, font=("Arial", 14))
+        label.pack(side="left", padx=10)
+
+        entry = ctk.CTkEntry(frame, corner_radius=10, width=200)
+        entry.pack(side="right", fill="x", expand=True, padx=10)
+
+        return entry
+
+    def create_filter_combobox(self, label_text, column):
+        frame = ctk.CTkFrame(self.filter_frame, fg_color="#2c2c2c", corner_radius=10)
+        frame.grid(row=0, column=column, pady=5, padx=10, sticky="ew")
+
+        label = ctk.CTkLabel(frame, text=label_text, font=("Arial", 14))
+        label.pack(side="left", padx=10)
+
+        combobox = ctk.CTkComboBox(frame, values=[], width=200, corner_radius=10)
+        combobox.pack(side="right", fill="x", expand=True, padx=10)
+
+        return combobox
+
+    def load_clientes(self):
+        clientes = ClienteCRUD.get_clientes(self.db)
+        cliente_ruts = [cliente.rut for cliente in clientes]
+        self.cliente_filter.configure(values=cliente_ruts)
+        self.cliente_filter.set("")
+
+    def apply_filters(self):
+        cliente_rut = self.cliente_filter.get()
+        fecha = self.fecha_filter.get()
+        monto = self.monto_filter.get()
+
+        if cliente_rut and cliente_rut != "Selecciona un cliente":
+            pedidos = PedidoCRUD.filtrar_pedidos_por_cliente(self.db, cliente_rut)
+        elif fecha:
+            if cliente_rut or monto:
+                messagebox.showerror("Error", "Solo se puede aplicar un filtro a la vez, porfavor borra los contenidos de los filtros.")
+                return
+            try:
+                datetime.strptime(fecha, "%Y-%m-%d")
+                pedidos = PedidoCRUD.filtrar_pedidos_por_fecha(self.db, fecha)
+            except ValueError:
+                messagebox.showerror("Error", "La fecha debe tener el formato YYYY-MM-DD.")
+                return
+        elif monto:
+            if cliente_rut or fecha:
+                messagebox.showerror("Error", "Solo se puede aplicar un filtro a la vez, porfavor borra los contenidos de los filtros.")
+                return
+            try:
+                monto = float(monto)
+                pedidos = PedidoCRUD.filtrar_pedidos_por_monto_mayor_que(self.db, monto)
+            except ValueError:
+                messagebox.showerror("Error", "El monto debe ser un número.")
+                return
+        else:
+            pedidos = PedidoCRUD.leer_pedidos(self.db)
+
+        self.refresh_list(pedidos)
+
+    def clear_filters(self):
+        self.cliente_filter.set("Selecciona un cliente")
+        self.fecha_filter.delete(0, tk.END)
+        self.monto_filter.delete(0, tk.END)
+        self.refresh_list()
+
+    def refresh_list(self, pedidos=None):
         for item in self.pedido_list.get_children():
             self.pedido_list.delete(item)
-        pedidos = PedidoCRUD.leer_pedidos(self.db)
+        if pedidos is None:
+            pedidos = PedidoCRUD.leer_pedidos(self.db)
         for pedido in pedidos:
             menus = ", ".join([f"{menu['cantidad']}x {MenuCRUD.get_menu_by_id(self.db, menu['id']).nombre}" for menu in pedido.menus])
             self.pedido_list.insert("", "end", values=(pedido.id, pedido.descripcion, pedido.total, pedido.fecha, pedido.cliente_rut, menus))
