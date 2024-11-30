@@ -14,6 +14,8 @@ from fpdf import FPDF
 from tkinter import messagebox as CTkM
 from datetime import datetime
 import tkinter as tk
+import matplotlib.pyplot as plt
+from graficos import  graficar_menus_mas_comprados, graficar_uso_ingredientes,graficar_ventas_por_fecha
 
 # Configuración global de estilos
 ctk.set_appearance_mode("dark")  # Opciones: "dark", "light", "system"
@@ -46,7 +48,7 @@ class MainApp(ctk.CTk):
         self.create_menu_button("Menu", MenuPanel)
         self.create_menu_button("Panel de compra", PanelCompra)
         self.create_menu_button("Pedidos", PanelPedido)
-        self.create_menu_button("Graficos", IngredientePanel)
+        self.create_menu_button("Graficos", GraficosPanel)
 
     def create_menu_button(self, text, panel_class):
         button = ctk.CTkButton(
@@ -626,6 +628,95 @@ class PanelPedido(ctk.CTkFrame):
         message_box = ctk.CTkMessageBox(title="Información", message=message)
         message_box.show()
 
+class GraficosPanel(ctk.CTkFrame):
+    def __init__(self, parent, db):
+        super().__init__(parent)
+        self.db = db
+        self.configure(fg_color="#1c1c1c")
+
+        # Título del Panel de Gráficos
+        self.label_title = ctk.CTkLabel(self, text="Panel de Gráficos", font=("Arial", 24, "bold"), text_color="white")
+        self.label_title.pack(pady=20)
+
+        # ComboBox para seleccionar el gráfico
+        self.tipo_grafico = ctk.CTkComboBox(
+            self, 
+            values=["Ventas por Fecha", "Menús más Comprados", "Uso de Ingredientes"],
+            width=300, 
+            corner_radius=10
+        )
+        self.tipo_grafico.set("Selecciona un gráfico")  # Texto predeterminado
+        self.tipo_grafico.pack(pady=10)
+
+        # Botón para generar el gráfico
+        self.bttn_generar_grafico = ctk.CTkButton(
+            self,
+            text="Generar Gráfico",
+            command=self.generar_grafico,
+            corner_radius=10
+        )
+        self.bttn_generar_grafico.pack(pady=20)
+
+        # Frame donde se dibujarán los gráficos
+        self.graph_frame = ctk.CTkFrame(self, fg_color="#1c1c1c")
+        self.graph_frame.pack(pady=20, padx=20, fill="both", expand=True)
+
+    def generar_grafico(self):
+        """Genera el gráfico basado en la selección del ComboBox"""
+        tipo = self.tipo_grafico.get()
+        
+        if tipo == "Ventas por Fecha":
+            self.graficar_ventas_por_fecha()
+        elif tipo == "Menús más Comprados":
+            self.graficar_menus_mas_comprados()
+        elif tipo == "Uso de Ingredientes":
+            self.graficar_uso_ingredientes()
+        else:
+            CTkM(title="Error", message="Seleccione un tipo de gráfico válido.", icon="cancel")
+
+    def graficar_ventas_por_fecha(self):
+        fechas = ["2024-11-20", "2024-11-21", "2024-11-22", "2024-11-23"]
+        ventas = [2000, 3500, 4000, 3000]
+
+        plt.figure(figsize=(10, 6))
+        plt.plot(fechas, ventas, marker="o", color="blue", label="Ventas")
+        plt.title("Ventas por Fecha")
+        plt.xlabel("Fecha")
+        plt.ylabel("Total de Ventas ($)")
+        plt.grid()
+        plt.legend()
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        plt.show()
+        
+        
+        graficar_ventas_por_fecha(self.db)  # Esta función puede estar en un archivo 'funciones.py'
+        
+    def graficar_menus_mas_comprados(self):
+        menus = ["Completos", "Hamburguesa", "Papas Fritas", "Pepsi"]
+        cantidades = [30, 20, 50, 40]
+
+        plt.figure(figsize=(8, 8))
+        plt.pie(cantidades, labels=menus, autopct="%1.1f%%", startangle=140)
+        plt.title("Distribución de Menús Más Comprados")
+        plt.axis("equal")
+        plt.show()
+
+        graficar_menus_mas_comprados(self.db)
+
+    def graficar_uso_ingredientes(self):
+        ingredientes = ["Tomate", "Palta", "Pan", "Vienesa"]
+        cantidades = [120, 80, 150, 100]
+
+        plt.figure(figsize=(12, 6))
+        plt.bar(ingredientes, cantidades, color="skyblue")
+        plt.title("Uso de Ingredientes Basado en Todos los Pedidos")
+        plt.xlabel("Ingrediente")
+        plt.ylabel("Cantidad Utilizada")
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        plt.show()
+        graficar_uso_ingredientes(self.db)
 class Generarboleta:
     def __init__(self, pedido):
         self.pedido = pedido
