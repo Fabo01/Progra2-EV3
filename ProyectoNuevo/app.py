@@ -1157,47 +1157,12 @@ class GraficosPanel(ctk.CTkFrame):
             CTkM(title="Error", message="Seleccione un tipo de gráfico válido.", icon="cancel")
 
     def graficar_ventas_por_fecha(self):
-        fechas = ["2024-11-20", "2024-11-21", "2024-11-22", "2024-11-23"]
-        ventas = [2000, 3500, 4000, 3000]
+        graficar_ventas_por_fecha(self.db)
 
-        plt.figure(figsize=(10, 6))
-        plt.plot(fechas, ventas, marker="o", color="blue", label="Ventas")
-        plt.title("Ventas por Fecha")
-        plt.xlabel("Fecha")
-        plt.ylabel("Total de Ventas ($)")
-        plt.grid()
-        plt.legend()
-        plt.xticks(rotation=45)
-        plt.tight_layout()
-        plt.show()
-        
-        
-        graficar_ventas_por_fecha(self.db)  # Esta función puede estar en un archivo 'funciones.py'
-        
     def graficar_menus_mas_comprados(self):
-        menus = ["Completos", "Hamburguesa", "Papas Fritas", "Pepsi"]
-        cantidades = [30, 20, 50, 40]
-
-        plt.figure(figsize=(8, 8))
-        plt.pie(cantidades, labels=menus, autopct="%1.1f%%", startangle=140)
-        plt.title("Distribución de Menús Más Comprados")
-        plt.axis("equal")
-        plt.show()
-
         graficar_menus_mas_comprados(self.db)
 
     def graficar_uso_ingredientes(self):
-        ingredientes = ["Tomate", "Palta", "Pan", "Vienesa"]
-        cantidades = [120, 80, 150, 100]
-
-        plt.figure(figsize=(12, 6))
-        plt.bar(ingredientes, cantidades, color="skyblue")
-        plt.title("Uso de Ingredientes Basado en Todos los Pedidos")
-        plt.xlabel("Ingrediente")
-        plt.ylabel("Cantidad Utilizada")
-        plt.xticks(rotation=45)
-        plt.tight_layout()
-        plt.show()
         graficar_uso_ingredientes(self.db)
 class Generarboleta:
     def __init__(self, pedido, db):
@@ -1215,13 +1180,13 @@ class Generarboleta:
 
         # Encabezado de la boleta
         pdf.set_font("Arial", "B", 16)
-        pdf.cell(200, 10, "Boleta Restaurante", ln=True, align="C")
+        pdf.cell(200, 10, "Boleta Restaurante bakano", ln=True, align="C")
         pdf.ln(10)
 
         # Detalles del restaurante (se pueden personalizar)
         pdf.set_font("Arial", size=12)
-        pdf.cell(0, 10, "Razón Social del Negocio", ln=True)
-        pdf.cell(0, 10, "RUT: 12345678-9", ln=True)
+        pdf.cell(0, 10, "Razón Social del Negocio mas bakano:", ln=True)
+        pdf.cell(0, 10, "RUT: 66.999.666-9", ln=True)
         pdf.cell(0, 10, "Dirección: Calle Falsa 123", ln=True)
         pdf.cell(0, 10, "Teléfono: +56 9 1234 5678", ln=True)
         pdf.ln(10)
@@ -1278,4 +1243,4 @@ class Generarboleta:
 
 if __name__ == "__main__":
     app = MainApp()
-    app.mainloop()
+    app.mainloop() 
